@@ -518,6 +518,52 @@ body {
 .empty-icon { font-size:36px; opacity:0.3; }
 .empty-text { font-family:var(--mono); font-size:11px; letter-spacing:0.08em; }
 
+/* ── 달력 ── */
+.cal-nav-btn {
+  background: none; border: 1px solid var(--border2); border-radius: 4px;
+  color: var(--fg); font-size: 20px; width: 30px; height: 30px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  line-height: 1; transition: all var(--transition);
+}
+.cal-nav-btn:hover { background: var(--blue-lt); border-color: var(--blue); color: var(--blue); }
+.cal-grid-header {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  text-align: center; margin-bottom: 6px;
+}
+.cal-grid-header span {
+  font-size: 11px; font-weight: 700; color: var(--fg-dim);
+  padding: 4px 0; letter-spacing: 0.05em;
+}
+.cal-grid-header span:first-child { color: var(--red); }
+.cal-grid-header span:last-child  { color: var(--blue); }
+.cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.cal-cell {
+  min-height: 72px; border-radius: 6px; border: 1px solid var(--border);
+  padding: 4px 6px; background: var(--panel);
+  vertical-align: top; position: relative;
+}
+.cal-cell.other-month { background: var(--surface); opacity: 0.5; }
+.cal-cell.today { border-color: var(--blue); background: var(--blue-lt); }
+.cal-day {
+  font-size: 12px; font-weight: 600; color: var(--fg-dim);
+  margin-bottom: 3px; text-align: right;
+}
+.cal-cell.today .cal-day { color: var(--blue); }
+.cal-cell:nth-child(7n+1) .cal-day { color: var(--red); }
+.cal-cell:nth-child(7n)   .cal-day { color: var(--blue); }
+.cal-bid-item {
+  font-size: 10px; background: var(--blue-lt); color: var(--blue);
+  border-radius: 3px; padding: 2px 5px; margin-bottom: 2px;
+  cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  transition: background var(--transition); border-left: 2px solid var(--blue);
+}
+.cal-bid-item:hover { background: var(--blue); color: #fff; }
+.cal-bid-item.bid { background: #CCFBF1; color: #0F766E; border-left-color: #0D9488; }
+.cal-bid-item.bid:hover { background: #0D9488; color: #fff; }
+
 /* ── 모달 ── */
 .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); backdrop-filter:blur(3px); z-index:100; align-items:center; justify-content:center; }
 .overlay.show { display:flex; }
@@ -638,6 +684,7 @@ body {
       <button class="filter-btn" id="fBtn2" onclick="setFilter(2)">투찰완료</button>
       <button class="filter-btn" id="fBtn3" onclick="setFilter(3)">개찰완료</button>
       <span class="count-badge" id="countBadge">총 0건</span>
+      <button class="filter-btn" onclick="openCalendar()" style="margin-left:4px;">📅 달력</button>
     </div>
     <!-- 달력 -->
     <div class="calendar-wrap">
@@ -777,6 +824,26 @@ body {
         <thead><tr><th>날짜</th><th>공사명</th><th>역산 사정률</th></tr></thead>
         <tbody id="historyBody"></tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- 달력 모달 -->
+<div class="overlay" id="calOverlay">
+  <div class="modal" style="width:640px; max-height:90vh;">
+    <div class="modal-hd">
+      <div style="display:flex; align-items:center; gap:16px;">
+        <button class="cal-nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+        <span class="modal-title" id="calTitle"></span>
+        <button class="cal-nav-btn" onclick="changeMonth(1)">&#8250;</button>
+      </div>
+      <button class="modal-close" onclick="closeModal('calOverlay')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px;">
+      <div class="cal-grid-header">
+        <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
     </div>
   </div>
 </div>
@@ -1392,6 +1459,103 @@ window.calClearFilter = function() {
   renderList();
 };
 
+
+// ── 달력 ─────────────────────────────────────
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+window.openCalendar = function() {
+  calYear  = new Date().getFullYear();
+  calMonth = new Date().getMonth();
+  renderCalendar();
+  openModal('calOverlay');
+};
+
+window.changeMonth = function(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  renderCalendar();
+};
+
+function renderCalendar() {
+  const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  document.getElementById('calTitle').textContent = `${calYear}년 ${monthNames[calMonth]}`;
+
+  const today    = new Date();
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const lastDate = new Date(calYear, calMonth + 1, 0).getDate();
+
+  // 진행중 + 투찰완료 건만 달력에 표시 (2차 시작일 기준)
+  const activeRecords = records.filter(r => !r.is_completed);
+
+  // 날짜별 건 분류
+  const byDate = {};
+  activeRecords.forEach(r => {
+    if (!r.start2) return;
+    const d = r.start2.slice(0, 10); // YYYY-MM-DD
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(r);
+  });
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  // 이전달 빈칸
+  const prevLastDate = new Date(calYear, calMonth, 0).getDate();
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell other-month';
+    cell.innerHTML = `<div class="cal-day">${prevLastDate - i}</div>`;
+    grid.appendChild(cell);
+  }
+
+  // 이번달
+  for (let d = 1; d <= lastDate; d++) {
+    const cell      = document.createElement('div');
+    const dateStr   = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday   = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
+    cell.className  = 'cal-cell' + (isToday ? ' today' : '');
+
+    let html = `<div class="cal-day">${d}</div>`;
+
+    // 해당 날짜 건 표시
+    if (byDate[dateStr]) {
+      byDate[dateStr].forEach(r => {
+        const cls = r.status === '투찰' ? 'cal-bid-item bid' : 'cal-bid-item';
+        const proj = (r.project||'').length > 10 ? r.project.slice(0,10)+'…' : r.project;
+        html += `<div class="${cls}" onclick="selectFromCal('${r.notice}')" title="${r.project}">${proj}</div>`;
+      });
+    }
+
+    cell.innerHTML = html;
+    grid.appendChild(cell);
+  }
+
+  // 다음달 빈칸
+  const totalCells = firstDay + lastDate;
+  const remaining  = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+  for (let d = 1; d <= remaining; d++) {
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell other-month';
+    cell.innerHTML = `<div class="cal-day">${d}</div>`;
+    grid.appendChild(cell);
+  }
+}
+
+window.selectFromCal = function(notice) {
+  const r = records.find(r => r.notice === notice);
+  if (!r) return;
+  closeModal('calOverlay');
+  // 잠시 후 선택 (모달 닫히는 애니메이션 후)
+  setTimeout(() => {
+    selectedNotice = notice;
+    renderList();
+    selectItem(r);
+    // 진행중 필터로 전환
+    setFilter(1);
+  }, 150);
+};
 
 // ── 모달 ─────────────────────────────────────
 window.openModal  = id => document.getElementById(id).classList.add('show');
