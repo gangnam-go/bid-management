@@ -430,6 +430,11 @@ body {
 .spinner { width:18px; height:18px; border:2px solid var(--border2); border-top-color:var(--blue); border-radius:50%; animation:spin 0.7s linear infinite; }
 @keyframes spin { to{transform:rotate(360deg)} }
 
+.lower-opt {
+  padding: 8px 14px; font-family: var(--mono); font-size: 12px;
+  color: var(--fg); cursor: pointer; transition: background var(--transition);
+}
+.lower-opt:hover { background: var(--blue-lt); color: var(--blue); }
 .confirm-msg { font-size:13px; line-height:1.7; color:var(--fg); }
 .confirm-project { font-family:var(--mono); color:var(--blue); font-weight:600; }
 </style>
@@ -483,17 +488,24 @@ body {
       <div class="field-sub" id="lbl98">배제기준(98%): —</div>
       <div class="field">
         <span class="field-label">낙찰하한율(%)</span>
-        <input class="field-input" id="f_lower" value="87.745"
-               list="lowerList" autocomplete="off"
-               oninput="debounceCalc()" style="width:100%;">
-        <datalist id="lowerList">
-          <option value="89.745">
-          <option value="88.745">
-          <option value="87.745">
-          <option value="87.495">
-          <option value="86.745">
-          <option value="85.745">
-        </datalist>
+        <div style="position:relative; display:flex; align-items:center; width:100%;">
+          <input class="field-input" id="f_lower" value="87.745"
+                 autocomplete="off" oninput="debounceCalc()"
+                 style="width:100%; padding-right:28px;">
+          <button onclick="toggleLowerList()" type="button"
+                  style="position:absolute; right:6px; background:none; border:none;
+                         color:var(--fg-muted); cursor:pointer; font-size:11px; padding:2px;">▼</button>
+          <div id="lowerList" style="display:none; position:absolute; top:100%; left:0; right:0;
+               background:var(--panel); border:1px solid var(--border2); border-radius:4px;
+               box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:50; overflow:hidden;">
+            <div class="lower-opt" onclick="pickLower('89.745')">89.745%</div>
+            <div class="lower-opt" onclick="pickLower('88.745')">88.745%</div>
+            <div class="lower-opt" onclick="pickLower('87.745')">87.745%</div>
+            <div class="lower-opt" onclick="pickLower('87.495')">87.495%</div>
+            <div class="lower-opt" onclick="pickLower('86.745')">86.745%</div>
+            <div class="lower-opt" onclick="pickLower('85.745')">85.745%</div>
+          </div>
+        </div>
       </div>
       <div class="field"><span class="field-label">A값</span><input class="field-input" id="f_a" placeholder="0" oninput="fmtMoney(this);debounceCalc()"></div>
       <div class="field"><span class="field-label">사정률(%)</span><input class="field-input" id="f_adjust" placeholder="100.0000" value="100.0000" oninput="debounceCalc()"></div>
@@ -1120,6 +1132,24 @@ window.showHistory = function() {
 
   openModal('historyOverlay');
 };
+
+// ── 낙찰하한율 드롭다운 ──────────────────────
+window.toggleLowerList = function() {
+  const list = document.getElementById('lowerList');
+  list.style.display = list.style.display === 'none' ? 'block' : 'none';
+};
+window.pickLower = function(val) {
+  document.getElementById('f_lower').value = val;
+  document.getElementById('lowerList').style.display = 'none';
+  doCalc();
+};
+// 외부 클릭 시 닫기
+document.addEventListener('click', e => {
+  if (!e.target.closest('#f_lower') && !e.target.closest('#lowerList') && !e.target.closest('button[onclick="toggleLowerList()"]')) {
+    const list = document.getElementById('lowerList');
+    if (list) list.style.display = 'none';
+  }
+});
 
 // ── 모달 ─────────────────────────────────────
 window.openModal  = id => document.getElementById(id).classList.add('show');
