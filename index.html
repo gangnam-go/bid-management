@@ -483,11 +483,17 @@ body {
       <div class="field-sub" id="lbl98">배제기준(98%): —</div>
       <div class="field">
         <span class="field-label">낙찰하한율(%)</span>
-        <select class="field-select" id="f_lower" onchange="debounceCalc()">
-          <option>89.745</option><option>88.745</option>
-          <option selected>87.745</option>
-          <option>86.745</option><option>85.745</option>
-        </select>
+        <input class="field-input" id="f_lower" value="87.745"
+               list="lowerList" autocomplete="off"
+               oninput="debounceCalc()" style="width:100%;">
+        <datalist id="lowerList">
+          <option value="89.745">
+          <option value="88.745">
+          <option value="87.745">
+          <option value="87.495">
+          <option value="86.745">
+          <option value="85.745">
+        </datalist>
       </div>
       <div class="field"><span class="field-label">A값</span><input class="field-input" id="f_a" placeholder="0" oninput="fmtMoney(this);debounceCalc()"></div>
       <div class="field"><span class="field-label">사정률(%)</span><input class="field-input" id="f_adjust" placeholder="100.0000" value="100.0000" oninput="debounceCalc()"></div>
