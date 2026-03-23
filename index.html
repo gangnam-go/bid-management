@@ -500,11 +500,11 @@ body {
         <span class="field-label">배제기준</span>
         <div style="display:flex; align-items:center; gap:10px; padding:0 10px;">
           <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-family:var(--mono); font-size:12px;">
-            <input type="radio" name="r_limit" id="r_limit_on" value="on" checked onchange="debounceCalc()" style="cursor:pointer;">
+            <input type="radio" name="r_limit" id="r_limit_on" value="on" onchange="debounceCalc()" style="cursor:pointer;">
             적용
           </label>
           <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-family:var(--mono); font-size:12px;">
-            <input type="radio" name="r_limit" id="r_limit_off" value="off" onchange="debounceCalc()" style="cursor:pointer;">
+            <input type="radio" name="r_limit" id="r_limit_off" value="off" checked onchange="debounceCalc()" style="cursor:pointer;">
             미적용
           </label>
         </div>
@@ -915,8 +915,8 @@ window.clearForm = function() {
    'f_base','f_net','f_a','f_actual','f_rec','f_result_reason'].forEach(id => sf(id,''));
   sf('f_adjust','100.0000');
   document.getElementById('f_lower').value = '87.745';
-  document.getElementById('r_limit_on').checked = true;
-  document.getElementById('r_limit_off').checked = false;
+  document.getElementById('r_limit_on').checked = false;
+  document.getElementById('r_limit_off').checked = true;
   document.getElementById('lbl98').textContent = '배제기준(98%): —';
   document.getElementById('analysisResult').textContent = '발주처를 입력하세요';
   document.getElementById('analysisResult').className = 'analysis-value muted';
@@ -1033,7 +1033,7 @@ window.saveRecord = async function() {
     actual_rate: parseFloat(ar.toFixed(4)),
     is_completed: actual > 0,
     result_reason: gstr('f_result_reason'),
-    limit_applied: document.getElementById('r_limit_on')?.checked ?? true,
+    limit_applied: document.getElementById('r_limit_on')?.checked ?? false,
     status,
     updated_at: new Date().toISOString(),
   };
@@ -1131,7 +1131,7 @@ function calcStddev(rates) {
 function renderStats() {
   const completed = records.filter(r => r.is_completed);
   const total     = completed.length;
-  const won       = completed.filter(r => r.result_reason === '정상' || !r.result_reason).length;
+    const won       = completed.filter(r => r.result_reason === '낙찰').length;
   const lost      = total - won;
 
   // 요약 카드 (3개)
