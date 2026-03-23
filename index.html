@@ -435,6 +435,16 @@ body {
   color: var(--fg); cursor: pointer; transition: background var(--transition);
 }
 .lower-opt:hover { background: var(--blue-lt); color: var(--blue); }
+.stat-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 20px; text-align: center; box-shadow: var(--shadow);
+}
+.stat-card-num { font-family: var(--mono); font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.stat-card-lbl { font-size: 12px; color: var(--fg-dim); }
+.reason-bar-wrap { margin-bottom: 14px; }
+.reason-bar-label { display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:var(--fg); }
+.reason-bar-bg { background: var(--gray-lt); border-radius: 4px; height: 10px; overflow: hidden; }
+.reason-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
 .confirm-msg { font-size:13px; line-height:1.7; color:var(--fg); }
 .confirm-project { font-family:var(--mono); color:var(--blue); font-weight:600; }
 </style>
@@ -447,6 +457,7 @@ body {
   <span class="header-title">입찰 관리 시스템</span>
   <nav class="header-tabs">
     <button class="header-tab active" onclick="switchTab('main')">입찰 관리</button>
+    <button class="header-tab" onclick="switchTab('stats')">📊 현황 분석</button>
     <button class="header-tab" onclick="switchTab('guide')">📖 계산식 안내</button>
   </nav>
   <div class="header-status">
@@ -574,6 +585,38 @@ body {
 
 
 </div>
+
+  <!-- 현황 분석 페이지 -->
+  <div class="guide-page" id="statsPage">
+    <div style="max-width:900px; margin:0 auto;">
+
+      <!-- 전체 요약 -->
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px;" id="statsSummary"></div>
+
+      <!-- 탈락사유별 현황 (드릴다운) -->
+      <div class="guide-section">
+        <div class="guide-section-title">📋 탈락사유별 현황 <span style="font-size:11px; font-weight:400; color:var(--fg-muted);">— 항목 클릭 시 해당 건 목록 표시</span></div>
+        <div id="statsReasonWrap"></div>
+        <div id="statsReasonDetail" style="display:none; margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
+          <div style="font-size:12px; font-weight:600; color:var(--blue); margin-bottom:10px;" id="statsReasonDetailTitle"></div>
+          <table class="guide-table">
+            <thead><tr><th>날짜</th><th>발주처</th><th>공사명</th><th>투찰금액</th></tr></thead>
+            <tbody id="statsReasonDetailBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 발주처별 현황 -->
+      <div class="guide-section">
+        <div class="guide-section-title">🏢 발주처별 낙찰/탈락 현황</div>
+        <table class="guide-table">
+          <thead><tr><th>발주처</th><th>전체</th><th>낙찰</th><th>탈락</th><th>평균 역산사정률</th><th>표준편차</th></tr></thead>
+          <tbody id="statsClientBody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
 
   <!-- 계산식 안내 페이지 -->
   <div class="guide-page" id="guidePage">
@@ -1053,18 +1096,144 @@ window.setFilter = function(mode) {
 window.switchTab = function(tab) {
   const mainBody  = document.querySelector('.body');
   const guidePage = document.getElementById('guidePage');
+  const statsPage = document.getElementById('statsPage');
   const tabs      = document.querySelectorAll('.header-tab');
+
+  // 모두 숨기기
+  mainBody.style.display = 'none';
+  guidePage.classList.remove('show');
+  statsPage.classList.remove('show');
+  tabs.forEach(t => t.classList.remove('active'));
+
   if (tab === 'guide') {
-    mainBody.style.display = 'none';
     guidePage.classList.add('show');
-    tabs[0].classList.remove('active');
+    tabs[2].classList.add('active');
+  } else if (tab === 'stats') {
+    statsPage.classList.add('show');
     tabs[1].classList.add('active');
+    renderStats();
   } else {
     mainBody.style.display = '';
-    guidePage.classList.remove('show');
     tabs[0].classList.add('active');
-    tabs[1].classList.remove('active');
   }
+};
+
+// ── 현황 분석 ────────────────────────────────
+function calcStddev(rates) {
+  if (rates.length < 2) return null;
+  const avg = rates.reduce((a,b) => a+b, 0) / rates.length;
+  const variance = rates.reduce((s,v) => s + Math.pow(v-avg, 2), 0) / (rates.length - 1);
+  return Math.sqrt(variance);
+}
+
+function renderStats() {
+  const completed = records.filter(r => r.is_completed);
+  const total     = completed.length;
+  const won       = completed.filter(r => r.result_reason === '정상' || !r.result_reason).length;
+  const lost      = total - won;
+
+  // 요약 카드 (3개)
+  document.getElementById('statsSummary').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-card-num" style="color:var(--fg)">${total}</div>
+      <div class="stat-card-lbl">전체 개찰</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-num" style="color:var(--green)">${won}</div>
+      <div class="stat-card-lbl">낙찰</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-num" style="color:var(--red)">${lost}</div>
+      <div class="stat-card-lbl">탈락</div>
+    </div>`;
+
+  // 탈락사유별 (드릴다운)
+  const reasonMap = {};
+  completed.forEach(r => {
+    const reason = r.result_reason || '미입력';
+    if (!reasonMap[reason]) reasonMap[reason] = [];
+    reasonMap[reason].push(r);
+  });
+  const reasonColors = {
+    '정상':             'var(--green)',
+    '낙찰하한선 미달':   'var(--amber)',
+    '순공사원가 98%미만':'var(--red)',
+    '미입력':           'var(--gray)',
+  };
+  const reasonWrap = document.getElementById('statsReasonWrap');
+  document.getElementById('statsReasonDetail').style.display = 'none';
+
+  reasonWrap.innerHTML = Object.entries(reasonMap)
+    .sort((a,b) => b[1].length - a[1].length)
+    .map(([reason, recs]) => {
+      const cnt   = recs.length;
+      const pct   = total > 0 ? (cnt/total*100).toFixed(1) : 0;
+      const color = reasonColors[reason] || 'var(--blue)';
+      return `
+        <div class="reason-bar-wrap" onclick="showReasonDetail('${reason}')"
+             style="cursor:pointer; padding:6px; border-radius:4px; transition:background 0.15s;"
+             onmouseover="this.style.background='var(--blue-lt)'"
+             onmouseout="this.style.background='transparent'">
+          <div class="reason-bar-label">
+            <span style="font-weight:500;">${reason}</span>
+            <span style="font-family:var(--mono); color:var(--fg-dim)">${cnt}건 (${pct}%) ▸</span>
+          </div>
+          <div class="reason-bar-bg">
+            <div class="reason-bar-fill" style="width:${pct}%; background:${color};"></div>
+          </div>
+        </div>`;
+    }).join('') || '<div style="color:var(--fg-muted); font-size:12px; padding:12px 0;">개찰 완료된 데이터가 없습니다</div>';
+
+  // 발주처별
+  const clientMap = {};
+  completed.forEach(r => {
+    if (!clientMap[r.client]) clientMap[r.client] = [];
+    clientMap[r.client].push(r);
+  });
+  const clientBody = document.getElementById('statsClientBody');
+  clientBody.innerHTML = Object.entries(clientMap)
+    .sort((a,b) => b[1].length - a[1].length)
+    .map(([client, recs]) => {
+      const cWon = recs.filter(r => r.result_reason === '정상' || !r.result_reason).length;
+      const cLost = recs.length - cWon;
+      const effRates = recs.map(r => {
+        const base=r.base||0, a=r.a_value||0, lower=r.lower_rate||87.745, actual=r.actual_result||0;
+        const denom = base - a;
+        if (denom <= 0) return null;
+        return ((actual - a) / denom) / (lower/100) * 100;
+      }).filter(v => v !== null);
+      const avg = effRates.length ? effRates.reduce((a,b)=>a+b,0)/effRates.length : null;
+      const std = calcStddev(effRates);
+      return `<tr>
+        <td>${client}</td>
+        <td style="text-align:center; font-family:var(--mono)">${recs.length}</td>
+        <td style="text-align:center; font-family:var(--mono); color:var(--green)">${cWon}</td>
+        <td style="text-align:center; font-family:var(--mono); color:var(--red)">${cLost}</td>
+        <td style="text-align:center; font-family:var(--mono); color:var(--blue)">${avg ? avg.toFixed(4)+'%' : '-'}</td>
+        <td style="text-align:center; font-family:var(--mono); color:var(--amber)">${std ? '±'+std.toFixed(4)+'%' : effRates.length < 2 ? '부족' : '-'}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="6" style="text-align:center; color:var(--fg-muted); padding:24px;">데이터 없음</td></tr>';
+}
+
+window.showReasonDetail = function(reason) {
+  const completed = records.filter(r => r.is_completed);
+  const filtered  = completed.filter(r => (r.result_reason || '미입력') === reason);
+  const detail    = document.getElementById('statsReasonDetail');
+  const title     = document.getElementById('statsReasonDetailTitle');
+  const tbody     = document.getElementById('statsReasonDetailBody');
+
+  title.textContent = `${reason}  —  ${filtered.length}건`;
+  tbody.innerHTML = filtered
+    .sort((a,b) => (b.end1||'').localeCompare(a.end1||''))
+    .map(r => `<tr>
+      <td style="font-family:var(--mono)">${(r.end1||'').slice(0,10)}</td>
+      <td>${r.client||''}</td>
+      <td>${r.project||''}</td>
+      <td style="text-align:right; font-family:var(--mono)">${r.final_bid ? r.final_bid.toLocaleString('ko-KR') : '-'}</td>
+    </tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--fg-muted); padding:16px;">데이터 없음</td></tr>';
+
+  detail.style.display = 'block';
+  detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 };
 
 // ── 달력 ─────────────────────────────────────
@@ -1158,7 +1327,16 @@ window.showHistory = function() {
   const avg       = rates.length ? rates.reduce((a,b)=>a+b,0)/rates.length : null;
 
   document.getElementById('historyTitle').textContent = `${client}  낙찰 이력`;
-  document.getElementById('historyAvg').textContent   = avg ? `평균 역산 사정률  ${avg.toFixed(4)}%  (${rates.length}건)` : '';
+  // 표준편차 계산
+  let stddev = null;
+  if (rates.length >= 2) {
+    const variance = rates.reduce((s, v) => s + Math.pow(v - avg, 2), 0) / (rates.length - 1);
+    stddev = Math.sqrt(variance);
+  }
+  const stdText = stddev !== null ? `  σ ${stddev.toFixed(4)}%` : (rates.length < 2 ? '  (데이터 부족)' : '');
+  document.getElementById('historyAvg').textContent = avg
+    ? `평균 ${avg.toFixed(4)}%${stdText}  (${rates.length}건)`
+    : '';
 
   const tbody = document.getElementById('historyBody');
   const rows  = completed.map(r => ({ r, eff: calcEffAdj(r) })).filter(x => x.eff !== null);
