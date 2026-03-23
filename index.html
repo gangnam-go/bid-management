@@ -546,6 +546,7 @@ body {
           <div id="reasonList" style="display:none; position:absolute; top:100%; left:0; right:0;
                background:var(--panel); border:1px solid var(--border2); border-radius:4px;
                box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:50; overflow:hidden;">
+            <div class="lower-opt" onclick="pickReason('낙찰')">낙찰 🎉</div>
             <div class="lower-opt" onclick="pickReason('정상')">정상 (낙찰가보다 높음)</div>
             <div class="lower-opt" onclick="pickReason('낙찰하한선 미달')">낙찰하한선 미달</div>
             <div class="lower-opt" onclick="pickReason('순공사원가 98%미만')">순공사원가 98%미만</div>
@@ -569,7 +570,7 @@ body {
     <div class="list-toolbar">
       <div class="search-box">
         <span class="search-icon">⌕</span>
-        <input class="search-input" id="searchInput" placeholder="공사명, 공고번호 검색..." oninput="renderList()">
+        <input class="search-input" id="searchInput" placeholder="공사명, 공고번호, 발주처 검색..." oninput="renderList()">
       </div>
       <button class="filter-btn" id="fBtn0" onclick="setFilter(0)">전체</button>
       <button class="filter-btn active-blue" id="fBtn1" onclick="setFilter(1)">진행중</button>
@@ -832,7 +833,8 @@ function renderList() {
   else if (filterMode === 3) disp = disp.filter(r => r.is_completed);
   if (kw) disp = disp.filter(r =>
     (r.project||'').toLowerCase().includes(kw) ||
-    (r.notice||'').toLowerCase().includes(kw)
+    (r.notice||'').toLowerCase().includes(kw) ||
+    (r.client||'').toLowerCase().includes(kw)
   );
 
   document.getElementById('countBadge').textContent = `총 ${disp.length}건`;
@@ -1155,7 +1157,8 @@ function renderStats() {
     reasonMap[reason].push(r);
   });
   const reasonColors = {
-    '정상':             'var(--green)',
+    '낙찰':             'var(--green)',
+    '정상':             'var(--blue)',
     '낙찰하한선 미달':   'var(--amber)',
     '순공사원가 98%미만':'var(--red)',
     '미입력':           'var(--gray)',
@@ -1194,7 +1197,7 @@ function renderStats() {
   clientBody.innerHTML = Object.entries(clientMap)
     .sort((a,b) => b[1].length - a[1].length)
     .map(([client, recs]) => {
-      const cWon = recs.filter(r => r.result_reason === '정상' || !r.result_reason).length;
+      const cWon = recs.filter(r => r.result_reason === '낙찰').length;
       const cLost = recs.length - cWon;
       const effRates = recs.map(r => {
         const base=r.base||0, a=r.a_value||0, lower=r.lower_rate||87.745, actual=r.actual_result||0;
