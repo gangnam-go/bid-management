@@ -534,7 +534,15 @@ body {
       <div class="field"><span class="field-label">A값</span><input class="field-input" id="f_a" placeholder="0" oninput="fmtMoney(this);debounceCalc()"></div>
       <div class="field"><span class="field-label">사정률(%)</span><input class="field-input" id="f_adjust" placeholder="100.0000" value="100.0000" oninput="debounceCalc()"></div>
       <div class="field"><span class="field-label">추천 투찰금액</span><input class="field-input rec" id="f_rec" placeholder="—" readonly></div>
-      <div class="field"><span class="field-label">실제 낙찰가</span><input class="field-input" id="f_actual" placeholder="0" oninput="fmtMoney(this)"></div>
+      <div class="field"><span class="field-label">실제 투찰금액</span><input class="field-input" id="f_real_bid" placeholder="추천금액 자동입력" oninput="fmtMoney(this);updateBidDiff()"></div>
+      <div class="field"><span class="field-label">실제 낙찰가</span><input class="field-input" id="f_actual" placeholder="0" oninput="fmtMoney(this);updateBidDiff()"></div>
+      <div id="bidDiffWrap" style="display:none; grid-column:1/-1; padding:8px 14px; background:var(--surface); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:11px;">
+        <div style="display:flex; gap:20px; flex-wrap:wrap;">
+          <span id="bidDiffRec"></span>
+          <span id="bidDiffReal"></span>
+          <span id="bidDiffWinner" style="font-weight:700;"></span>
+        </div>
+      </div>
       <div class="field"><span class="field-label" style="color:var(--blue);">실제 기초금액</span><input class="field-input" id="f_real_base" placeholder="개찰결과에서 확인" oninput="fmtMoney(this)"></div>
       <div class="field"><span class="field-label" style="color:var(--blue);">실제 순공사원가</span><input class="field-input" id="f_real_net" placeholder="배제기준 적용 시만" oninput="fmtMoney(this)"></div>
       <div class="field">
@@ -899,6 +907,8 @@ function selectItem(r) {
   sf('f_result_reason', r.result_reason || '');
   smf('f_real_base', r.real_base || '');
   smf('f_real_net',  r.real_net  || '');
+  smf('f_real_bid',  r.real_bid  || '');
+  updateBidDiff();
   const limitOn = r.limit_applied !== false;
   document.getElementById('r_limit_on').checked = limitOn;
   document.getElementById('r_limit_off').checked = !limitOn;
@@ -917,7 +927,8 @@ window.clearForm = function() {
   selectedNotice = null;
   ['f_client','f_project','f_notice','f_end1','f_start2',
    'f_base','f_net','f_a','f_actual','f_rec','f_result_reason',
-   'f_real_base','f_real_net'].forEach(id => sf(id,''));
+   'f_real_base','f_real_net','f_real_bid'].forEach(id => sf(id,''));
+  document.getElementById('bidDiffWrap').style.display = 'none';
   sf('f_adjust','100.0000');
   document.getElementById('f_lower').value = '87.745';
   document.getElementById('r_limit_on').checked = false;
@@ -966,6 +977,12 @@ function doCalc() {
 
   rec.className = capped ? 'field-input capped' : 'field-input rec';
   rec.value     = capped ? `${fmt(result)}  ⚠ 배제적용` : fmt(result);
+  // 실제 투찰금액이 비어있으면 추천금액으로 자동 채우기
+  const realBidEl = document.getElementById('f_real_bid');
+  if (realBidEl && !realBidEl.value) {
+    realBidEl.value = fmt(result);
+  }
+  updateBidDiff();
 }
 
 // ── 발주처 분석 ───────────────────────────────
@@ -1041,6 +1058,7 @@ window.saveRecord = async function() {
     result_reason: gstr('f_result_reason'),
     real_base: graw('f_real_base') || null,
     real_net:  graw('f_real_net')  || null,
+    real_bid:  graw('f_real_bid')  || null,
     limit_applied: document.getElementById('r_limit_on')?.checked ?? false,
     status,
     updated_at: new Date().toISOString(),
@@ -1361,6 +1379,40 @@ window.showHistory = function() {
     : `<tr><td colspan="3" style="text-align:center;color:var(--fg-muted);padding:24px;">데이터 없음</td></tr>`;
 
   openModal('historyOverlay');
+};
+
+// ── 감 vs 통계 대결 ──────────────────────────
+window.updateBidDiff = function() {
+  const actual  = graw('f_actual');
+  const recVal  = parseFloat((document.getElementById('f_rec').value||'').replace(/[^0-9]/g,'')) || 0;
+  const realBid = graw('f_real_bid');
+  const wrap    = document.getElementById('bidDiffWrap');
+
+  if (!actual || !realBid) { wrap.style.display = 'none'; return; }
+
+  wrap.style.display = 'block';
+  const diffRec  = Math.abs(actual - recVal);
+  const diffReal = Math.abs(actual - realBid);
+
+  const recColor  = diffRec  <= diffReal ? 'var(--green)' : 'var(--red)';
+  const realColor = diffReal <= diffRec  ? 'var(--green)' : 'var(--red)';
+
+  document.getElementById('bidDiffRec').innerHTML =
+    `<span style="color:var(--fg-dim)">추천: </span><span style="color:${recColor}">${fmt(recVal)}  (차이 ${fmt(diffRec)})</span>`;
+  document.getElementById('bidDiffReal').innerHTML =
+    `<span style="color:var(--fg-dim)">실제투찰: </span><span style="color:${realColor}">${fmt(realBid)}  (차이 ${fmt(diffReal)})</span>`;
+
+  const winnerEl = document.getElementById('bidDiffWinner');
+  if (diffRec < diffReal) {
+    winnerEl.innerHTML = '🏆 통계 승!';
+    winnerEl.style.color = 'var(--blue)';
+  } else if (diffReal < diffRec) {
+    winnerEl.innerHTML = '🏆 감 승!';
+    winnerEl.style.color = 'var(--amber)';
+  } else {
+    winnerEl.innerHTML = '🤝 무승부!';
+    winnerEl.style.color = 'var(--fg-dim)';
+  }
 };
 
 // ── 탈락사유 드롭다운 ────────────────────────
