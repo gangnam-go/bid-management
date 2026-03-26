@@ -534,7 +534,7 @@ body {
       <div class="field"><span class="field-label">A값</span><input class="field-input" id="f_a" placeholder="0" oninput="fmtMoney(this);debounceCalc()"></div>
       <div class="field"><span class="field-label">사정률(%)</span><input class="field-input" id="f_adjust" placeholder="100.0000" value="100.0000" oninput="debounceCalc()"></div>
       <div class="field"><span class="field-label">추천 투찰금액</span><input class="field-input rec" id="f_rec" placeholder="—" readonly></div>
-      <div class="field"><span class="field-label">실제 투찰금액</span><input class="field-input" id="f_real_bid" placeholder="추천금액 자동입력" oninput="fmtMoney(this);updateBidDiff()"></div>
+      <div class="field"><span class="field-label">실제 투찰금액</span><input class="field-input" id="f_real_bid" placeholder="추천금액 자동입력" oninput="fmtMoney(this);updateBidDiff();this.dataset.userModified='true'"></div>
       <div class="field"><span class="field-label">실제 낙찰가</span><input class="field-input" id="f_actual" placeholder="0" oninput="fmtMoney(this);updateBidDiff()"></div>
       <div id="bidDiffWrap" style="display:none; grid-column:1/-1; padding:8px 14px; background:var(--surface); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:11px;">
         <div style="display:flex; gap:20px; flex-wrap:wrap;">
@@ -915,6 +915,7 @@ function selectItem(r) {
   smf('f_real_base', r.real_base || '');
   smf('f_real_net',  r.real_net  || '');
   smf('f_real_bid',  r.real_bid  || '');
+  window._realBidSet = true;  // 기존 데이터는 자동입력 안 함
   updateBidDiff();
   const limitOn = r.limit_applied !== false;
   document.getElementById('r_limit_on').checked = limitOn;
@@ -936,6 +937,9 @@ window.clearForm = function() {
    'f_base','f_net','f_a','f_actual','f_rec','f_result_reason',
    'f_real_base','f_real_net','f_real_bid'].forEach(id => sf(id,''));
   document.getElementById('bidDiffWrap').style.display = 'none';
+  const rbEl = document.getElementById('f_real_bid');
+  if (rbEl) delete rbEl.dataset.userModified;
+  window._realBidSet = false;
   sf('f_adjust','100.0000');
   document.getElementById('f_lower').value = '87.745';
   document.getElementById('r_limit_on').checked = false;
@@ -984,9 +988,9 @@ function doCalc() {
 
   rec.className = capped ? 'field-input capped' : 'field-input rec';
   rec.value     = capped ? `${fmt(result)}  ⚠ 배제적용` : fmt(result);
-  // 실제 투찰금액이 비어있으면 추천금액으로 자동 채우기
+  // 실제 투찰금액 — 사용자가 직접 수정하지 않은 경우만 추천금액 따라감
   const realBidEl = document.getElementById('f_real_bid');
-  if (realBidEl && !realBidEl.value) {
+  if (realBidEl && !realBidEl.dataset.userModified) {
     realBidEl.value = fmt(result);
   }
   updateBidDiff();
@@ -1006,7 +1010,8 @@ function analyzeClient(fillAdj = true) {
     el.className   = 'analysis-value muted';
     return;
   }
-  const completed = records.filter(r => r.client === client && r.is_completed);
+  const completed = records.filter(r => r.client === client && r.is_completed
+    && r.result_reason !== '순공사원가 98%미만');  // 배제기준 케이스 제외
   const rates     = completed.map(r => calcEffAdj(r)).filter(v => v !== null);
 
   if (!rates.length) {
@@ -1232,7 +1237,7 @@ function renderStats() {
     .map(([client, recs]) => {
       const cWon = recs.filter(r => r.result_reason === '낙찰').length;
       const cLost = recs.length - cWon;
-      const effRates = recs.map(r => {
+      const effRates = recs.filter(r => r.result_reason !== '순공사원가 98%미만').map(r => {
         const base=r.base||0, a=r.a_value||0, lower=r.lower_rate||87.745, actual=r.actual_result||0;
         const denom = base - a;
         if (denom <= 0) return null;
@@ -1358,7 +1363,8 @@ window.selectFromCal = function(notice) {
 window.showHistory = function() {
   const client = gstr('f_client');
   if (!client) { toast('발주처를 먼저 입력하세요', 'error'); return; }
-  const completed = records.filter(r => r.client === client && r.is_completed);
+  const completed = records.filter(r => r.client === client && r.is_completed
+    && r.result_reason !== '순공사원가 98%미만');  // 배제기준 케이스 제외
   const rates     = completed.map(r => calcEffAdj(r)).filter(v => v !== null);
   const avg       = rates.length ? rates.reduce((a,b)=>a+b,0)/rates.length : null;
 
