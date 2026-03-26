@@ -492,8 +492,8 @@ body {
       <div class="field"><span class="field-label">발주처</span><input class="field-input" id="f_client" placeholder="발주처명" oninput="onClientInput()"></div>
       <div class="field"><span class="field-label">공사명</span><input class="field-input" id="f_project" placeholder="공사명"></div>
       <div class="field"><span class="field-label">공고번호</span><input class="field-input" id="f_notice" placeholder="공고번호"></div>
-      <div class="field"><span class="field-label">1차 종료일시</span><input class="field-input" id="f_end1" placeholder="YYYY-MM-DD HH:MM"></div>
-      <div class="field"><span class="field-label">2차 시작일시</span><input class="field-input" id="f_start2" placeholder="YYYY-MM-DD HH:MM"></div>
+      <div class="field"><span class="field-label">1차 종료일시</span><input class="field-input" id="f_end1" placeholder="YYYY/MM/DD HH:MM:SS"></div>
+      <div class="field"><span class="field-label">2차 시작일시</span><input class="field-input" id="f_start2" placeholder="YYYY/MM/DD HH:MM:SS"></div>
       <div class="field"><span class="field-label">기초금액</span><input class="field-input" id="f_base" placeholder="0" oninput="fmtMoney(this);debounceCalc()"></div>
       <div class="field"><span class="field-label">순공사원가</span><input class="field-input" id="f_net" placeholder="0" oninput="fmtMoney(this);debounceCalc()"></div>
       <div class="field" style="min-height:36px;">
@@ -1048,7 +1048,7 @@ window.saveRecord = async function() {
 
   const data = {
     client: gstr('f_client'), project, notice,
-    end1:   gstr('f_end1'),   start2: gstr('f_start2'),
+    end1:   normalizeDate(gstr('f_end1')),   start2: normalizeDate(gstr('f_start2')),
     base, net_cost: net, a_value: a,
     adjust_rate: adj, lower_rate: lower,
     final_bid: Math.round(final),
