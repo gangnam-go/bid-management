@@ -834,6 +834,13 @@ onSnapshot(q, snap => {
   console.error(err);
 });
 
+// ── 날짜 정규화 ──────────────────────────────
+function normalizeDate(str) {
+  if (!str) return str;
+  // 2026/03/26 15:00:00 → 2026-03-26 15:00
+  return str.replace(/\//g, '-').replace(/(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}).*/, '$1 $2');
+}
+
 // ── 목록 렌더링 ───────────────────────────────
 function renderList() {
   const kw   = document.getElementById('searchInput').value.trim().toLowerCase();
