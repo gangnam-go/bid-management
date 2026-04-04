@@ -566,28 +566,7 @@ body {
             <input id="f_real_bid" placeholder="추천금액 자동입력" oninput="fmtMoney(this);updateBidDiff()">
           </div>
           <div class="input-group">
-            <label>실제 낙찰가</label>
-            <input id="f_actual" placeholder="0" oninput="fmtMoney(this);updateBidDiff()">
-          </div>
-          <div id="bidDiffWrap" class="full" style="display:none; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-family:var(--mono); font-size:11px;">
-            <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
-              <span id="bidDiffRec"></span>
-              <span id="bidDiffReal"></span>
-              <span id="bidDiffWinner" style="font-weight:700; margin-left:auto;"></span>
-            </div>
-          </div>
-
-          <div class="input-group">
-            <label>실제 기초금액 <span style="color:var(--blue); font-size:10px;">개찰후 입력</span></label>
-            <input id="f_real_base" placeholder="개찰결과에서 확인" oninput="fmtMoney(this)">
-          </div>
-          <div class="input-group">
-            <label>실제 순공사원가 <span style="color:var(--blue); font-size:10px;">배제기준 적용 시만</span></label>
-            <input id="f_real_net" placeholder="배제기준 적용 시만" oninput="fmtMoney(this)">
-          </div>
-
-          <div class="input-group full">
-            <label>탈락사유</label>
+            <label>결과/탈락사유</label>
             <div style="position:relative; display:flex; align-items:center;">
               <input id="f_result_reason" placeholder="선택 또는 직접입력" autocomplete="off" style="width:100%; padding-right:28px;">
               <button onclick="toggleReasonList()" type="button" style="position:absolute; right:8px; background:none; border:none; color:var(--fg-muted); cursor:pointer; font-size:11px;">▼</button>
@@ -596,7 +575,19 @@ body {
                 <div class="lower-opt" onclick="pickReason('정상')">정상 (낙찰가보다 높음)</div>
                 <div class="lower-opt" onclick="pickReason('낙찰하한선 미달')">낙찰하한선 미달</div>
                 <div class="lower-opt" onclick="pickReason('순공사원가 98%미만')">순공사원가 98%미만</div>
+                <div class="lower-opt" style="border-top:1px solid var(--border); color:var(--fg-dim);" onclick="pickReason('불참(토목면허 필요)')">불참 — 토목면허 필요</div>
+                <div class="lower-opt" onclick="pickReason('불참(정상)')">불참 — 정상</div>
+                <div class="lower-opt" onclick="pickReason('불참(낙찰하한선 미달)')">불참 — 낙찰하한선 미달</div>
+                <div class="lower-opt" onclick="pickReason('불참(순공사원가 98%미만)')">불참 — 순공사원가 98%미만</div>
+                <div class="lower-opt" style="border-top:1px solid var(--border);" onclick="pickReason('직접입력')">✏️ 직접입력</div>
               </div>
+            </div>
+          </div>
+          <div id="bidDiffWrap" class="full" style="display:none; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-family:var(--mono); font-size:11px;">
+            <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
+              <span id="bidDiffRec"></span>
+              <span id="bidDiffReal"></span>
+              <span id="bidDiffWinner" style="font-weight:700; margin-left:auto;"></span>
             </div>
           </div>
         </div>
@@ -1019,8 +1010,6 @@ function selectItem(r) {
   document.getElementById('f_lower').value = (r.lower_rate||87.745).toFixed(3);
   smf('f_actual', r.actual_result > 0 ? r.actual_result : '');
   sf('f_result_reason', r.result_reason || '');
-  smf('f_real_base', r.real_base || '');
-  smf('f_real_net',  r.real_net  || '');
   smf('f_real_bid',  r.real_bid  || '');
   window._realBidSet = true;
   updateBidDiff();
@@ -1050,7 +1039,7 @@ window.clearForm = function() {
   selectedNotice = null;
   ['f_client','f_project','f_notice','f_end1','f_start2',
    'f_base','f_net','f_a','f_actual','f_rec','f_result_reason',
-   'f_real_base','f_real_net','f_real_bid',
+   'f_real_bid',
    'act_base','act_net','act_price'].forEach(id => sf(id,''));
   sf('f_adjust','100.0000');
   document.getElementById('f_lower').value = '87.745';
@@ -1320,8 +1309,8 @@ window.saveRecord = async function() {
     actual_rate: parseFloat(ar.toFixed(4)),
     is_completed: actual > 0,
     result_reason: gstr('f_result_reason'),
-    real_base: graw('f_real_base') || null,
-    real_net:  graw('f_real_net')  || null,
+    real_base: graw('act_base') || null,
+    real_net:  graw('act_net')  || null,
     real_bid:  graw('f_real_bid')  || null,
     reserve_range: document.querySelector('input[name="r_reserve"]:checked')?.value || '3',
     limit_applied: limitOn,
