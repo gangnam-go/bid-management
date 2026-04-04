@@ -518,7 +518,7 @@ body {
                 </label>
               </span>
             </label>
-            <input id="f_net" placeholder="미입력 시 기초금액÷1.1 자동적용" oninput="fmtMoney(this);onNetInput();debounceCalc()">
+            <input id="f_net" placeholder="미입력 시 (기초금액÷1.1)-A값 자동적용" oninput="fmtMoney(this);onNetInput();debounceCalc()">
           </div>
 
           <div class="input-group full">
@@ -1096,7 +1096,7 @@ function doCalc() {
   const rec   = document.getElementById('f_rec');
   // 순공사원가 무이면 기초금액÷1.1 자동 적용
   const netHasVal = document.getElementById('r_net_y')?.checked ?? false;
-  const netEff  = netHasVal ? net : (base > 0 ? Math.ceil(base / 1.1) : 0);
+  const netEff  = netHasVal ? net : (base > 0 ? Math.ceil(base / 1.1 - a) : 0);
   const limit98 = netEff * 0.98;
 
   if (netEff > 0 && limitOn) lbl.textContent = `배제기준(98%): ${fmt(limit98)}${!netHasVal ? ' (자동)' : ''}`;
