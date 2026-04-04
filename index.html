@@ -673,7 +673,7 @@ body {
         92.0% 초과 경계 구간
       </div>
       <div class="diff-box">
-        <div class="diff-label">일반관리비 및 이윤 가용액</div>
+        <div class="diff-label" id="diff-label-txt">일반관리비 및 이윤 가용액</div>
         <div class="diff-amount" id="diffAmount">— 원</div>
         <div class="diff-msg" id="diffMsg">—</div>
       </div>
@@ -1145,21 +1145,28 @@ function doCalc() {
   const result = limitOn ? Math.max(raw, limit98) : raw;
   const capped = limitOn && raw < limit98;
 
-  updateProfitCard(base, netEff, dangerZone, result);
+  updateProfitCard(base, netEff, dangerZone, result, netHasVal);
 
   rec.style.color = capped ? 'var(--amber)' : 'var(--green)';
   rec.value = capped ? `${fmt(result)}  ⚠ 배제적용` : fmt(result);
 
   // 수익성 차이
-  const diffAmt = result - netEff;
   const diffEl  = document.getElementById('diffAmount');
   const diffMsg = document.getElementById('diffMsg');
-  diffEl.textContent = (diffAmt >= 0 ? '+' : '') + fmt(diffAmt) + ' 원';
-  diffEl.style.color = diffAmt >= 0 ? 'var(--green)' : 'var(--red)';
-  if (diffAmt >= 0) {
-    diffMsg.innerHTML = `<span style="color:var(--green)">순공사원가 보전 후 +${fmt(diffAmt)}원 여유</span>`;
+  if (!netHasVal) {
+    // 순공사원가 미제공 — 가용액 표시 불가
+    diffEl.textContent = '—';
+    diffEl.style.color = 'var(--fg-muted)';
+    diffMsg.innerHTML  = `<span style="color:var(--red)">일반관리비·이윤 확보 불가 — 경영 판단 사항</span>`;
   } else {
-    diffMsg.innerHTML = `<span style="color:var(--red)">순공사원가 대비 ${fmt(Math.abs(diffAmt))}원 부족</span>`;
+    const diffAmt = result - netEff;
+    diffEl.textContent = (diffAmt >= 0 ? '+' : '') + fmt(diffAmt) + ' 원';
+    diffEl.style.color = diffAmt >= 0 ? 'var(--green)' : 'var(--red)';
+    if (diffAmt >= 0) {
+      diffMsg.innerHTML = `<span style="color:var(--green)">순공사원가 보전 후 +${fmt(diffAmt)}원 여유</span>`;
+    } else {
+      diffMsg.innerHTML = `<span style="color:var(--red)">순공사원가 대비 ${fmt(Math.abs(diffAmt))}원 부족</span>`;
+    }
   }
 
   // 시뮬레이션
@@ -1178,24 +1185,38 @@ function doCalc() {
 }
 
 // ── 수익성 카드 ───────────────────────────────
-function updateProfitCard(base, net, dangerZone=false, recAmt=0) {
-  const card = document.getElementById('profitCard');
-  const zone = document.getElementById('profitZone');
-  const rate = document.getElementById('profitRate');
-  const sub  = document.getElementById('profitSub');
+function updateProfitCard(base, net, dangerZone=false, recAmt=0, netHasVal=true) {
+  const card    = document.getElementById('profitCard');
+  const zone    = document.getElementById('profitZone');
+  const rate    = document.getElementById('profitRate');
+  const sub     = document.getElementById('profitSub');
+  const diffLbl = document.getElementById('diff-label-txt');
 
-  if (!base || !net) {
+  if (!base) {
     card.className    = 'profit-card idle';
     zone.textContent  = '분석 대기 중';
     rate.textContent  = '—';
     sub.innerHTML     = '90.0% 이하 안정 구간<br>90.0~92.0% 주의 구간<br>92.0% 초과 경계 구간';
+    if (diffLbl) diffLbl.textContent = '일반관리비 및 이윤 가용액';
     return;
   }
 
-  // 분모: 추천투찰가가 있으면 사용, 없으면 base로 fallback
+  // ── 순공사원가 미제공 공고 ──
+  if (!netHasVal) {
+    const ratio = (recAmt > 0 ? recAmt : 0) / base * 100;
+    card.className   = 'profit-card danger';
+    zone.textContent = '🚨 순공사원가 미제공 공고';
+    rate.textContent = ratio > 0 ? ratio.toFixed(2) + '%' : '—';
+    sub.textContent  = `공고기초금액 대비 ${ratio.toFixed(2)}% 수준 계약 — 경영 판단 사항`;
+    if (diffLbl) diffLbl.textContent = '일반관리비·이윤 확보 불가';
+    return;
+  }
+
+  // ── 순공사원가 명시 공고 ──
   const denom = recAmt > 0 ? recAmt : base;
   const ratio = (net / denom) * 100;
   rate.textContent = ratio.toFixed(2) + '%';
+  if (diffLbl) diffLbl.textContent = '일반관리비 및 이윤 가용액';
 
   // 배제기준이 낙찰하한율보다 높은 경우 최우선 경고
   if (dangerZone) {
