@@ -1097,13 +1097,34 @@ function doCalc() {
   // 순공사원가 무이면 기초금액÷1.1 자동 적용
   const netHasVal = document.getElementById('r_net_y')?.checked ?? false;
   const netEff  = netHasVal ? net : (base > 0 ? Math.ceil(base / 1.1 - a) : 0);
-  const limit98 = netEff * 0.98;
+  const limit98 = netEff * 0.98 + a;  // 순공사원가×98% + A값
 
-  if (netEff > 0 && limitOn) lbl.textContent = `배제기준(98%): ${fmt(limit98)}${!netHasVal ? ' (자동)' : ''}`;
-  else if (netEff > 0)       lbl.textContent = `배제기준(98%): 미적용`;
-  else                    lbl.textContent = '배제기준(98%): —';
+  // 낙찰하한율 기준가
+  const lowerBase = ((base - a) * (lower/100)) + a;
+  const dangerZone = limitOn && netEff > 0 && limit98 > lowerBase;
 
-  updateProfitCard(base, netEff);
+  if (netEff > 0 && limitOn) {
+    const autoText = !netHasVal ? ' (자동)' : '';
+    if (dangerZone) {
+      lbl.textContent = `⚠️ 배제기준: ${fmt(limit98)}${autoText} > 낙찰하한율 기준가: ${fmt(lowerBase)} — 배제기준이 실질 하한선!`;
+      lbl.style.color = 'var(--red)';
+      lbl.style.fontWeight = '600';
+    } else {
+      lbl.textContent = `배제기준(98%): ${fmt(limit98)}${autoText}`;
+      lbl.style.color = 'var(--red)';
+      lbl.style.fontWeight = '400';
+    }
+  } else if (netEff > 0) {
+    lbl.textContent = '배제기준(98%): 미적용';
+    lbl.style.color = 'var(--fg-muted)';
+    lbl.style.fontWeight = '400';
+  } else {
+    lbl.textContent = '배제기준(98%): —';
+    lbl.style.color = 'var(--fg-muted)';
+    lbl.style.fontWeight = '400';
+  }
+
+  updateProfitCard(base, netEff, dangerZone);
 
   if (!base) {
     rec.value = '';
@@ -1151,7 +1172,7 @@ function doCalc() {
 }
 
 // ── 수익성 카드 ───────────────────────────────
-function updateProfitCard(base, net) {
+function updateProfitCard(base, net, dangerZone=false) {
   const card = document.getElementById('profitCard');
   const zone = document.getElementById('profitZone');
   const rate = document.getElementById('profitRate');
@@ -1167,6 +1188,14 @@ function updateProfitCard(base, net) {
 
   const ratio = (net / base) * 100;
   rate.textContent = ratio.toFixed(2) + '%';
+
+  // 배제기준이 낙찰하한율보다 높은 경우 최우선 경고
+  if (dangerZone) {
+    card.className   = 'profit-card danger';
+    zone.textContent = '🚨 배제기준 > 낙찰하한율 — 낙찰하한율로 투찰 시 탈락!';
+    sub.innerHTML    = `순공사원가 비율 ${ratio.toFixed(2)}%<br><strong>배제기준이 실질 하한선입니다.</strong><br>낙찰하한율 기준가로 투찰하면 순공사원가 98% 미만으로 자동 배제됩니다.`;
+    return;
+  }
 
   if (ratio <= 90) {
     card.className   = 'profit-card safe';
