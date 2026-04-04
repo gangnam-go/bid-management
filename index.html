@@ -1324,9 +1324,10 @@ function analyzeClient(fillAdj = true) {
     return;
   }
   const curReserve = document.querySelector('input[name="r_reserve"]:checked')?.value || '3';
+  // 평균 계산용: 순공사원가 98%미만 탈락 + 배제기준 적용 낙찰 제외
+  // 목록 표시용: 배제기준 적용 낙찰은 포함 (순공사원가 미제공으로 표기)
   const completed  = records.filter(r => r.client === client && r.is_completed
-    && r.result_reason !== '순공사원가 98%미만'
-    && r.result_reason !== '낙찰(배제기준 적용)');
+    && r.result_reason !== '순공사원가 98%미만');
   const useRecs = curReserve === '2'
     ? completed.filter(r => (r.reserve_range||'3') === '2')
     : completed;
@@ -1703,9 +1704,10 @@ window.showHistory = function() {
   const client = gstr('f_client');
   if (!client) { toast('발주처를 먼저 입력하세요', 'error'); return; }
   const curReserve = document.querySelector('input[name="r_reserve"]:checked')?.value || '3';
+  // 평균 계산용: 순공사원가 98%미만 탈락 + 배제기준 적용 낙찰 제외
+  // 목록 표시용: 배제기준 적용 낙찰은 포함 (순공사원가 미제공으로 표기)
   const completed  = records.filter(r => r.client === client && r.is_completed
-    && r.result_reason !== '순공사원가 98%미만'
-    && r.result_reason !== '낙찰(배제기준 적용)');
+    && r.result_reason !== '순공사원가 98%미만');
   const useRecs = curReserve === '2'
     ? completed.filter(r => (r.reserve_range||'3') === '2')
     : completed;
@@ -1722,14 +1724,18 @@ window.showHistory = function() {
   document.getElementById('historyAvg').textContent   = avg
     ? `평균 ${avg.toFixed(4)}%${stdText}  (${rates.length}건)`  : '';
 
-  const rows = useRecs.map(r => ({ r, eff: calcEffAdj(r) })).filter(x => x.eff !== null);
+  // 목록: 사정율 null이어도 표시, 평균은 null 제외(기존 유지)
+  const rows = useRecs.map(r => ({ r, eff: calcEffAdj(r) }));
   document.getElementById('historyBody').innerHTML = rows.length
     ? rows.map(({r, eff}) => `
         <tr>
           <td>${(r.start2||'').slice(0,10)}</td>
           <td>${r.project||''}</td>
           <td style="text-align:center; color:var(--blue);">±${r.reserve_range||'3'}%</td>
-          <td class="td-rate">${eff.toFixed(4)}% ${r.real_base ? '<span style="font-size:9px;color:var(--blue);">실측</span>' : ''}</td>
+          <td class="td-rate">${eff !== null
+            ? `${eff.toFixed(4)}% ${r.real_base ? '<span style="font-size:9px;color:var(--blue);">실측</span>' : ''}`
+            : '<span style="font-size:11px;color:var(--fg-muted);">순공사원가 미제공(98%미만배제)</span>'
+          }</td>
         </tr>`).join('')
     : `<tr><td colspan="4" style="text-align:center; color:var(--fg-muted); padding:20px;">데이터 없음</td></tr>`;
 
