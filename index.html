@@ -668,12 +668,12 @@ body {
       <div class="profit-zone" id="profitZone">분석 대기 중</div>
       <div class="profit-rate" id="profitRate">—</div>
       <div class="profit-sub" id="profitSub">
-        90.0% 이하 안정권<br>
+        90.0% 이하 안정 구간<br>
         90.0~92.0% 주의 구간<br>
-        92.0% 초과 위험 구간
+        92.0% 초과 경계 구간
       </div>
       <div class="diff-box">
-        <div class="diff-label">추천투찰가 대비 수익성</div>
+        <div class="diff-label">일반관리비 및 이윤 가용액</div>
         <div class="diff-amount" id="diffAmount">— 원</div>
         <div class="diff-msg" id="diffMsg">—</div>
       </div>
@@ -1129,9 +1129,8 @@ function doCalc() {
     lbl.style.fontWeight = '400';
   }
 
-  updateProfitCard(base, netEff, dangerZone);
-
   if (!base) {
+    updateProfitCard(0, 0);
     rec.value = '';
     document.getElementById('res_rec').textContent   = '—';
     document.getElementById('res_98').textContent    = '—';
@@ -1146,6 +1145,8 @@ function doCalc() {
   const result = limitOn ? Math.max(raw, limit98) : raw;
   const capped = limitOn && raw < limit98;
 
+  updateProfitCard(base, netEff, dangerZone, result);
+
   rec.style.color = capped ? 'var(--amber)' : 'var(--green)';
   rec.value = capped ? `${fmt(result)}  ⚠ 배제적용` : fmt(result);
 
@@ -1156,9 +1157,9 @@ function doCalc() {
   diffEl.textContent = (diffAmt >= 0 ? '+' : '') + fmt(diffAmt) + ' 원';
   diffEl.style.color = diffAmt >= 0 ? 'var(--green)' : 'var(--red)';
   if (diffAmt >= 0) {
-    diffMsg.innerHTML = `<span style="color:var(--green)">순원가 보전 +${fmt(diffAmt)}원 여유</span>`;
+    diffMsg.innerHTML = `<span style="color:var(--green)">순공사원가 보전 후 +${fmt(diffAmt)}원 여유</span>`;
   } else {
-    diffMsg.innerHTML = `<span style="color:var(--red)">순원가 대비 ${fmt(Math.abs(diffAmt))}원 부족</span>`;
+    diffMsg.innerHTML = `<span style="color:var(--red)">순공사원가 대비 ${fmt(Math.abs(diffAmt))}원 부족</span>`;
   }
 
   // 시뮬레이션
@@ -1177,7 +1178,7 @@ function doCalc() {
 }
 
 // ── 수익성 카드 ───────────────────────────────
-function updateProfitCard(base, net, dangerZone=false) {
+function updateProfitCard(base, net, dangerZone=false, recAmt=0) {
   const card = document.getElementById('profitCard');
   const zone = document.getElementById('profitZone');
   const rate = document.getElementById('profitRate');
@@ -1187,11 +1188,13 @@ function updateProfitCard(base, net, dangerZone=false) {
     card.className    = 'profit-card idle';
     zone.textContent  = '분석 대기 중';
     rate.textContent  = '—';
-    sub.innerHTML     = '90.0% 이하 안정권<br>90.0~92.0% 주의 구간<br>92.0% 초과 위험 구간';
+    sub.innerHTML     = '90.0% 이하 안정 구간<br>90.0~92.0% 주의 구간<br>92.0% 초과 경계 구간';
     return;
   }
 
-  const ratio = (net / base) * 100;
+  // 분모: 추천투찰가가 있으면 사용, 없으면 base로 fallback
+  const denom = recAmt > 0 ? recAmt : base;
+  const ratio = (net / denom) * 100;
   rate.textContent = ratio.toFixed(2) + '%';
 
   // 배제기준이 낙찰하한율보다 높은 경우 최우선 경고
@@ -1204,16 +1207,16 @@ function updateProfitCard(base, net, dangerZone=false) {
 
   if (ratio <= 90) {
     card.className   = 'profit-card safe';
-    zone.textContent = '✅ 90.0% 이하 안정권';
-    sub.textContent  = `순공사원가 비율 ${ratio.toFixed(2)}% — 배제기준 여유 있음`;
+    zone.textContent = '✅ 안정 구간';
+    sub.textContent  = `순공사원가 비율 ${ratio.toFixed(2)}% — 일반관리비·이윤 여유 충분`;
   } else if (ratio <= 92) {
     card.className   = 'profit-card warning';
-    zone.textContent = '⚠️ 90.0~92.0% 주의 구간';
-    sub.textContent  = `순공사원가 비율 ${ratio.toFixed(2)}% — 배제기준 근접, 신중한 투찰 필요`;
+    zone.textContent = '⚠️ 주의 구간';
+    sub.textContent  = `순공사원가 비율 ${ratio.toFixed(2)}% — 일반관리비·이윤 여유 부족, 신중한 투찰 필요`;
   } else {
     card.className   = 'profit-card danger';
-    zone.textContent = '🚨 92.0% 초과 위험 구간';
-    sub.textContent  = `순공사원가 비율 ${ratio.toFixed(2)}% — 손실 위험, 입찰 재고 권장`;
+    zone.textContent = '🚨 경계 구간';
+    sub.textContent  = `순공사원가 비율 ${ratio.toFixed(2)}% — 일반관리비·이윤 확보 어려움, 입찰 재고 권장`;
   }
 }
 
