@@ -9,7 +9,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:       #F5F6F8;
+  --bg:       #F0F2F5;
   --panel:    #FFFFFF;
   --surface:  #F8F9FA;
   --border:   #E2E6EA;
@@ -25,762 +25,765 @@
   --red-lt:   #FEE2E2;
   --gray:     #6B7280;
   --gray-lt:  #F3F4F6;
-  --fg:       #111827;
-  --fg-dim:   #374151;
-  --fg-muted: #6B7280;
+  --fg:       #1E293B;
+  --fg-dim:   #475569;
+  --fg-muted: #94A3B8;
   --mono:     'JetBrains Mono', monospace;
   --sans:     'Noto Sans KR', sans-serif;
-  --shadow:   0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
-  --radius:   6px;
-  --transition: 0.15s ease;
+  --shadow:   0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.10);
+  --radius:   8px;
+  --tr:       0.15s ease;
 }
 
 body {
   font-family: var(--sans);
-  font-size: 15px;
+  font-size: 13px;
   background: var(--bg);
   color: var(--fg);
-  height: 100vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  min-height: 100vh;
 }
 
-/* ── 헤더 ── */
-.header {
+/* ── 네비바 ── */
+.navbar {
   background: var(--blue);
   color: #fff;
-  padding: 0 20px;
-  height: 48px;
+  padding: 0 24px;
+  height: 52px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+  gap: 14px;
   box-shadow: 0 2px 8px rgba(30,111,217,0.3);
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
-.header-icon { font-size: 18px; }
-.header-title { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
-.header-date { font-family: var(--mono); font-size: 11px; opacity: 0.75; }
-.header-tabs { display: flex; gap: 4px; margin-left: auto; }
-.header-tab {
-  background: transparent; border: 1px solid rgba(255,255,255,0.3);
-  color: rgba(255,255,255,0.75); font-family: var(--sans); font-size: 12px;
-  font-weight: 500; padding: 5px 14px; border-radius: 4px; cursor: pointer;
-  transition: all var(--transition);
-}
-.header-tab:hover { background: rgba(255,255,255,0.15); color: #fff; }
-.header-tab.active { background: rgba(255,255,255,0.25); color: #fff; font-weight: 700; border-color: rgba(255,255,255,0.6); }
-.header-status { font-size: 11px; opacity: 0.8; display: flex; align-items: center; gap: 5px; }
-.status-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ADE80; animation: pulse 2s infinite; }
+.nav-logo { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
+.nav-logo span { font-weight: 300; font-size: 12px; opacity: 0.7; margin-left: 6px; }
+.nav-status { font-size: 11px; opacity: 0.8; display: flex; align-items: center; gap: 5px; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: #FCA5A5; animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.nav-date { font-family: var(--mono); font-size: 11px; opacity: 0.7; }
+.nav-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.nav-btn {
+  padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: 1px solid rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.15); color: #fff;
+  transition: all var(--tr);
+}
+.nav-btn:hover { background: rgba(255,255,255,0.25); }
+.nav-btn.active { background: rgba(255,255,255,0.3); border-color: rgba(255,255,255,0.7); }
 
-/* ── 레이아웃 ── */
-.body {
+/* ── 메인 레이아웃 ── */
+.container {
+  max-width: 1300px;
+  margin: 24px auto;
+  padding: 0 20px;
   display: grid;
-  grid-template-columns: 400px 1fr;
-  flex: 1;
-  overflow: hidden;
+  grid-template-columns: 1fr 420px;
+  gap: 20px;
+  align-items: start;
 }
 
-/* ── 왼쪽 패널 ── */
-.left {
+/* ── 카드 ── */
+.card {
   background: var(--panel);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* ── 분석 카드 ── */
-.analysis-card {
-  margin: 14px 14px 0;
-  background: var(--blue-lt);
-  border: 1px solid #BFDBFE;
   border-radius: var(--radius);
-  padding: 12px 14px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
 }
-.analysis-card-label { font-size: 10px; color: var(--blue); font-weight: 600; letter-spacing: 0.06em; margin-bottom: 5px; }
-.analysis-value { font-family: var(--mono); font-size: 14px; font-weight: 400; color: var(--blue-d); min-height: 20px; }
-.analysis-value.error { color: var(--red); }
-.analysis-value.muted { color: var(--fg-muted); font-weight: 400; font-family: var(--sans); }
-.analysis-actions { margin-top: 10px; display: flex; gap: 8px; }
-
-/* ── 섹션 헤더 ── */
-.section-hd {
-  padding: 12px 14px 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--fg);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border-bottom: 1px solid var(--border);
-  margin-top: 10px;
-}
-
-/* ── 폼 ── */
-.form-scroll { overflow-y: auto; flex: 1; }
-.form-scroll::-webkit-scrollbar { width: 4px; }
-.form-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-.field {
-  display: grid;
-  grid-template-columns: 108px 1fr;
+.card-header {
+  padding: 18px 22px 14px;
+  border-bottom: 2px solid var(--blue);
+  display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--border);
-  min-height: 36px;
+  justify-content: space-between;
 }
-.field-label {
-  font-size: 12px;
-  color: var(--fg);
-  padding: 0 10px 0 14px;
-  font-family: var(--mono);
+.card-title { font-size: 15px; font-weight: 700; color: var(--fg); }
+.card-body { padding: 20px 22px; }
+
+/* ── 폼 그리드 ── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.full { grid-column: span 2; }
+.col3 { grid-template-columns: 1fr 1fr 1fr; }
+
+.input-group { display: flex; flex-direction: column; gap: 5px; }
+.input-group label {
+  font-size: 12px; font-weight: 600;
+  color: var(--fg-dim); letter-spacing: 0.02em;
 }
-.field-input {
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--fg);
-  font-family: var(--mono);
+.input-group input, .input-group select {
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
   font-size: 13px;
-  padding: 8px 10px;
-  width: 100%;
-  transition: background var(--transition);
-}
-.field-input:focus { background: var(--blue-lt); }
-.field-input::placeholder { color: var(--fg-muted); }
-.field-input.rec { color: var(--green); font-weight: 600; }
-.field-input.capped { color: var(--amber); font-weight: 600; }
-.field-select {
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--fg);
   font-family: var(--mono);
-  font-size: 12px;
-  padding: 7px 10px;
-  width: 100%;
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-}
-.field-sub {
-  grid-column: 2;
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--red);
-  padding: 2px 10px 5px;
-  border-bottom: 1px solid var(--border);
-}
-
-/* ── 버튼 ── */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 14px;
-  border: none;
-  border-radius: var(--radius);
-  font-family: var(--sans);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition);
-  white-space: nowrap;
-}
-.btn-blue   { background: var(--blue);  color: #fff; }
-.btn-blue:hover  { background: var(--blue-d); box-shadow: var(--shadow-md); }
-.btn-green  { background: var(--green); color: #fff; }
-.btn-green:hover { background: #15803D; }
-.btn-red    { background: transparent; color: var(--red); border: 1px solid var(--red); }
-.btn-red:hover   { background: var(--red); color: #fff; }
-.btn-amber  { background: var(--amber); color: #fff; }
-.btn-amber:hover { background: #B45309; }
-.btn-ghost  { background: var(--gray-lt); color: var(--gray); border: 1px solid var(--border2); }
-.btn-ghost:hover { color: var(--fg); border-color: var(--gray); }
-.btn-teal   { background: #0D9488; color: #fff; }
-.btn-teal:hover  { background: #0F766E; }
-.btn-sm { padding: 4px 10px; font-size: 11px; }
-
-.btn-bar {
-  display: flex;
-  gap: 6px;
-  padding: 12px 14px;
-  border-top: 1px solid var(--border);
   background: var(--surface);
-  flex-wrap: wrap;
+  color: var(--fg);
+  outline: none;
+  transition: border-color var(--tr), background var(--tr);
+}
+.input-group input:focus { border-color: var(--blue); background: #fff; }
+.input-group input::placeholder { color: var(--fg-muted); font-family: var(--sans); }
+.input-group select { cursor: pointer; }
+
+.divider { border: none; border-top: 1px dashed var(--border); margin: 4px 0; grid-column: span 2; }
+
+/* ── 배제기준/예비가격 라디오 ── */
+.radio-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 8px 0;
+}
+.radio-row label {
+  display: flex; align-items: center; gap: 5px;
+  cursor: pointer; font-family: var(--mono); font-size: 12px;
+  color: var(--fg); font-weight: 400;
+}
+.sub-label {
+  font-size: 11px; color: var(--red);
+  font-family: var(--mono); margin-top: 2px;
 }
 
-/* ── 오른쪽: 목록 ── */
-.right {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--bg);
+/* ── 사후 복기 카드 ── */
+.card.actual { border-color: #FDBA74; }
+.card.actual .card-header { border-color: #EA580C; }
+.card.actual .card-title { color: #C2410C; }
+
+.summary-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; margin-top: 12px; }
+.summary-table td { border: 1px solid var(--border); padding: 7px 8px; vertical-align: middle; }
+.summary-table .lbl { font-weight: 600; color: var(--fg-dim); font-size: 11px; display: block; margin-bottom: 3px; }
+.summary-table .val { font-family: var(--mono); font-size: 12px; }
+.summary-table .adj-cell { background: #EFF6FF; color: var(--blue); font-weight: 700; }
+.summary-table .rec-cell { background: #FEFCE8; color: #CA8A04; font-weight: 700; }
+
+/* ── 오른쪽: 수익성 카드 ── */
+.profit-card {
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  padding: 22px;
+  text-align: center;
+  transition: all 0.3s ease;
+  margin-bottom: 20px;
+}
+.profit-card.idle    { background: var(--surface); border-color: var(--border2); }
+.profit-card.safe    { background: #F0FDF4; border-color: #86EFAC; }
+.profit-card.warning { background: #FFFBEB; border-color: #FCD34D; }
+.profit-card.danger  { background: #FEF2F2; border-color: #FCA5A5; }
+
+.profit-zone {
+  font-size: 13px; font-weight: 700; padding: 5px 14px;
+  border-radius: 6px; display: inline-block; margin-bottom: 10px;
+}
+.profit-card.idle    .profit-zone { background: var(--gray-lt); color: var(--gray); }
+.profit-card.safe    .profit-zone { background: #DCFCE7; color: #166534; }
+.profit-card.warning .profit-zone { background: #FEF3C7; color: #92400E; }
+.profit-card.danger  .profit-zone { background: #FEE2E2; color: #991B1B; }
+
+.profit-rate {
+  font-size: 48px; font-family: var(--mono); font-weight: 700; margin: 6px 0 8px;
+}
+.profit-card.idle    .profit-rate { color: var(--fg-muted); }
+.profit-card.safe    .profit-rate { color: #16A34A; }
+.profit-card.warning .profit-rate { color: #D97706; }
+.profit-card.danger  .profit-rate { color: var(--red); }
+
+.profit-sub { font-size: 12px; color: var(--fg-dim); line-height: 1.7; }
+
+.diff-box {
+  background: rgba(255,255,255,0.8); border-radius: 8px;
+  padding: 14px; margin-top: 14px; border: 1px solid rgba(0,0,0,0.06);
+}
+.diff-label { font-size: 11px; color: var(--fg-muted); margin-bottom: 4px; }
+.diff-amount { font-size: 20px; font-weight: 700; font-family: var(--mono); }
+.diff-msg { font-size: 12px; font-weight: 600; margin-top: 5px; }
+
+/* ── 시뮬레이션 결과 카드 ── */
+.sim-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.sim-item:last-of-type { border-bottom: none; }
+.sim-item-label { color: var(--fg-dim); }
+.sim-item-value { font-family: var(--mono); font-weight: 600; }
+.sim-main {
+  background: var(--blue-lt); border-radius: 8px;
+  padding: 14px; text-align: center; margin: 12px 0;
+}
+.sim-main-label { font-size: 11px; color: var(--blue); margin-bottom: 6px; }
+.sim-main-value { font-size: 22px; font-weight: 700; font-family: var(--mono); color: var(--blue); }
+.sim-main-sub { font-size: 12px; color: var(--fg-dim); margin-top: 4px; }
+
+.btn-process {
+  width: 100%; padding: 13px; background: var(--blue); color: #fff;
+  border: none; border-radius: 8px; font-weight: 700; font-size: 13px;
+  cursor: pointer; transition: background var(--tr); margin-top: 8px;
+}
+.btn-process:hover { background: var(--blue-d); }
+
+/* ── 감 vs 통계 ── */
+.battle-box {
+  background: var(--surface); border-radius: 6px;
+  padding: 10px 12px; margin-top: 8px; border: 1px solid var(--border);
+  font-size: 11px; font-family: var(--mono);
+}
+.battle-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+.battle-winner { font-weight: 700; font-size: 12px; text-align: center; margin-top: 6px; }
+
+/* ── 팝업 오버레이 ── */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(3px);
+  z-index: 100; align-items: center; justify-content: center;
+}
+.overlay.show { display: flex; }
+.modal {
+  background: var(--panel); border-radius: 10px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  width: 680px; max-height: 88vh;
+  display: flex; flex-direction: column;
+  animation: modalIn 0.2s ease;
+}
+.modal-sm { width: 420px; }
+.modal-lg { width: 780px; }
+@keyframes modalIn {
+  from { opacity:0; transform:scale(0.96) translateY(8px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+.modal-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 22px; border-bottom: 1px solid var(--border);
+}
+.modal-title { font-size: 14px; font-weight: 700; }
+.modal-close {
+  background: none; border: none; color: var(--fg-dim);
+  font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 4px;
+}
+.modal-close:hover { background: var(--gray-lt); }
+.modal-body { padding: 18px 22px; overflow-y: auto; flex: 1; }
+.modal-footer {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 14px 22px; border-top: 1px solid var(--border);
 }
 
+/* ── 목록 팝업 ── */
 .list-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px;
 }
 .search-box {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 5px 10px;
-  flex: 1;
-  max-width: 260px;
-  transition: border-color var(--transition);
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 10px; flex: 1;
 }
 .search-box:focus-within { border-color: var(--blue); }
-.search-icon { color: var(--fg-muted); }
 .search-input {
   background: none; border: none; outline: none;
-  font-family: var(--mono); font-size: 12px;
-  color: var(--fg); width: 100%;
+  font-family: var(--mono); font-size: 12px; color: var(--fg); width: 100%;
 }
 .search-input::placeholder { color: var(--fg-muted); }
-
 .filter-btn {
-  padding: 5px 12px;
-  border: 1px solid var(--border2);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--fg-dim);
-  font-size: 11px;
-  font-family: var(--mono);
-  cursor: pointer;
-  transition: all var(--transition);
+  padding: 5px 12px; border: 1px solid var(--border2);
+  border-radius: 6px; background: transparent;
+  color: var(--fg-dim); font-size: 11px; font-family: var(--mono);
+  cursor: pointer; transition: all var(--tr);
 }
 .filter-btn:hover { border-color: var(--blue); color: var(--blue); }
-.filter-btn.active-blue   { background: var(--blue);  color: #fff; border-color: var(--blue);  font-weight: 600; }
-.filter-btn.active-teal   { background: #0D9488; color: #fff; border-color: #0D9488; font-weight: 600; }
-.filter-btn.active-gray   { background: var(--gray);  color: #fff; border-color: var(--gray);  font-weight: 600; }
-.count-badge { font-family: var(--mono); font-size: 12px; color: var(--fg-dim); margin-left: auto; }
+.filter-btn.active-blue  { background: var(--blue);  color: #fff; border-color: var(--blue); font-weight: 600; }
+.filter-btn.active-teal  { background: #0D9488; color: #fff; border-color: #0D9488; font-weight: 600; }
+.filter-btn.active-gray  { background: var(--gray);  color: #fff; border-color: var(--gray); font-weight: 600; }
+.count-badge { font-family: var(--mono); font-size: 11px; color: var(--fg-muted); margin-left: auto; }
 
-/* ── 가이드 페이지 ── */
-.guide-page { display: none; flex: 1; overflow-y: auto; padding: 32px; background: var(--bg); height: calc(100vh - 48px); }
-.guide-page.show { display: block; }
-.guide-section { background: var(--panel); border-radius: 8px; border: 1px solid var(--border); padding: 24px 28px; margin-bottom: 20px; box-shadow: var(--shadow); }
-.guide-section-title { font-size: 15px; font-weight: 700; color: var(--blue); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-.guide-text { font-size: 13px; line-height: 1.9; color: var(--fg); }
-.guide-text p { margin-bottom: 10px; }
-.guide-formula {
-  background: #F0F4FF; border: 1px solid #BFDBFE; border-left: 4px solid var(--blue);
-  border-radius: 6px; padding: 16px 20px; margin: 14px 0;
-  font-family: var(--mono); font-size: 13px; color: var(--fg); line-height: 2;
-}
-.guide-formula .formula-title { font-size: 11px; color: var(--blue); font-weight: 700; letter-spacing: 0.08em; margin-bottom: 8px; }
-.guide-var { color: var(--blue-d); font-weight: 600; }
-.guide-result { color: var(--green); font-weight: 700; }
-.guide-warn { background: var(--amber-lt); border: 1px solid #FCD34D; border-radius: 6px; padding: 12px 16px; margin: 12px 0; font-size: 12px; color: #92400E; line-height: 1.7; }
-.guide-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 12px; }
-.guide-table th { background: var(--blue-lt); color: var(--blue); font-weight: 700; padding: 8px 12px; text-align: left; border: 1px solid #BFDBFE; }
-.guide-table td { padding: 8px 12px; border: 1px solid var(--border); color: var(--fg); }
-.guide-table tr:nth-child(even) td { background: var(--surface); }
-.guide-step { display: flex; gap: 14px; margin-bottom: 14px; align-items: flex-start; }
-.guide-step-num { width: 26px; height: 26px; background: var(--blue); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
-.guide-step-content { flex: 1; font-size: 13px; line-height: 1.8; color: var(--fg); }
-
-.list-wrap { flex: 1; overflow-y: auto; padding: 0; background: var(--panel); }
-
+.list-wrap { max-height: 60vh; overflow-y: auto; }
 .list-wrap::-webkit-scrollbar { width: 4px; }
 .list-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
 .bid-card {
-  background: var(--panel);
-  border: none;
-  border-bottom: 1px solid var(--border);
-  border-radius: 0;
-  padding: 16px 20px;
-  margin-bottom: 0;
-  cursor: pointer;
-  display: grid;
-  grid-template-columns: 36px 1fr auto;
-  gap: 0 12px;
-  align-items: center;
-  transition: background var(--transition);
-}
-@keyframes fadeUp {
-  from { opacity:0; transform:translateY(4px); }
-  to   { opacity:1; transform:translateY(0); }
+  border: none; border-bottom: 1px solid var(--border);
+  padding: 13px 16px; cursor: pointer;
+  display: grid; grid-template-columns: 36px 1fr auto;
+  gap: 0 10px; align-items: center;
+  transition: background var(--tr);
 }
 .bid-card:hover { background: var(--blue-lt); }
 .bid-card.selected { background: var(--blue-lt); border-left: 3px solid var(--blue); }
-.bid-card.done { opacity: 1; }
-
 .bid-dot {
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; flex-shrink: 0;
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 13px;
 }
 .dot-active { background: #EBF2FF; color: var(--blue); }
 .dot-bid    { background: #CCFBF1; color: #0D9488; }
 .dot-done   { background: var(--gray-lt); color: var(--gray); }
-
-.bid-client { font-size: 12px; color: var(--fg-dim); margin-bottom: 3px; }
-.bid-project { font-size: 15px; font-weight: 400; color: var(--fg); margin-bottom: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bid-card.done .bid-project { color: var(--fg); font-weight: 600; }
-.bid-dates { display: flex; gap: 16px; font-size: 12px; color: var(--fg-dim); }
-.bid-date-lbl { color: var(--fg-muted); margin-right: 2px; }
-
-.bid-badge {
-  font-size: 11px;
-  font-weight: 500;
-  padding: 3px 10px;
-  border-radius: 12px;
-}
+.bid-client { font-size: 11px; color: var(--fg-dim); margin-bottom: 2px; }
+.bid-project { font-size: 13px; color: var(--fg); margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bid-dates { display: flex; gap: 14px; font-size: 11px; font-family: var(--mono); color: var(--fg-dim); }
+.bid-date-lbl { color: var(--fg-muted); }
+.bid-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
 .badge-active { background: var(--blue-lt); color: var(--blue); }
 .badge-bid    { background: #CCFBF1; color: #0F766E; }
 .badge-done   { background: var(--gray-lt); color: var(--gray); }
 
-
-/* ── 빈 상태 ── */
-.empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:200px; color:var(--fg-muted); gap:8px; }
-.empty-icon { font-size:36px; opacity:0.3; }
-.empty-text { font-family:var(--mono); font-size:11px; letter-spacing:0.08em; }
+/* ── 현황 분석 ── */
+.stat-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 18px; text-align: center;
+}
+.stat-card-num { font-family: var(--mono); font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.stat-card-lbl { font-size: 11px; color: var(--fg-dim); }
+.reason-bar-wrap { margin-bottom: 12px; cursor: pointer; padding: 6px; border-radius: 4px; transition: background var(--tr); }
+.reason-bar-wrap:hover { background: var(--blue-lt); }
+.reason-bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+.reason-bar-bg { background: var(--gray-lt); border-radius: 4px; height: 8px; overflow: hidden; }
+.reason-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
 
 /* ── 달력 ── */
 .cal-nav-btn {
   background: none; border: 1px solid var(--border2); border-radius: 4px;
-  color: var(--fg); font-size: 20px; width: 30px; height: 30px;
+  color: var(--fg); font-size: 18px; width: 30px; height: 30px;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
-  line-height: 1; transition: all var(--transition);
+  transition: all var(--tr);
 }
-.cal-nav-btn:hover { background: var(--blue-lt); border-color: var(--blue); color: var(--blue); }
-.cal-grid-header {
-  display: grid; grid-template-columns: repeat(7, 1fr);
-  text-align: center; margin-bottom: 6px;
-}
-.cal-grid-header span {
-  font-size: 11px; font-weight: 700; color: var(--fg-dim);
-  padding: 4px 0; letter-spacing: 0.05em;
-}
+.cal-nav-btn:hover { background: var(--blue-lt); color: var(--blue); }
+.cal-grid-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 6px; }
+.cal-grid-header span { font-size: 11px; font-weight: 700; color: var(--fg-dim); padding: 4px 0; }
 .cal-grid-header span:first-child { color: var(--red); }
 .cal-grid-header span:last-child  { color: var(--blue); }
-.cal-grid {
-  display: grid; grid-template-columns: repeat(7, 1fr);
-  gap: 3px;
-}
-.cal-cell {
-  min-height: 72px; border-radius: 6px; border: 1px solid var(--border);
-  padding: 4px 6px; background: var(--panel);
-  vertical-align: top; position: relative;
-}
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.cal-cell { min-height: 70px; border-radius: 6px; border: 1px solid var(--border); padding: 4px 5px; background: var(--panel); }
 .cal-cell.other-month { background: var(--surface); opacity: 0.5; }
 .cal-cell.today { border-color: var(--blue); background: var(--blue-lt); }
-.cal-day {
-  font-size: 12px; font-weight: 600; color: var(--fg-dim);
-  margin-bottom: 3px; text-align: right;
-}
+.cal-day { font-size: 11px; font-weight: 600; color: var(--fg-dim); margin-bottom: 3px; text-align: right; }
 .cal-cell.today .cal-day { color: var(--blue); }
 .cal-cell:nth-child(7n+1) .cal-day { color: var(--red); }
 .cal-cell:nth-child(7n)   .cal-day { color: var(--blue); }
 .cal-bid-item {
   font-size: 10px; background: var(--blue-lt); color: var(--blue);
-  border-radius: 3px; padding: 2px 5px; margin-bottom: 2px;
+  border-radius: 3px; padding: 2px 4px; margin-bottom: 2px;
   cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  transition: background var(--transition); border-left: 2px solid var(--blue);
+  border-left: 2px solid var(--blue); transition: background var(--tr);
 }
 .cal-bid-item:hover { background: var(--blue); color: #fff; }
 .cal-bid-item.bid { background: #CCFBF1; color: #0F766E; border-left-color: #0D9488; }
 .cal-bid-item.bid:hover { background: #0D9488; color: #fff; }
 
-/* ── 모달 ── */
-.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); backdrop-filter:blur(3px); z-index:100; align-items:center; justify-content:center; }
-.overlay.show { display:flex; }
-.modal { background:var(--panel); border-radius:8px; box-shadow:0 20px 60px rgba(0,0,0,0.2); width:580px; max-height:80vh; display:flex; flex-direction:column; animation:modalIn 0.2s ease; }
-@keyframes modalIn { from{opacity:0;transform:scale(0.96) translateY(8px)} to{opacity:1;transform:scale(1) translateY(0)} }
-.modal-sm { width:400px; }
-.modal-hd { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
-.modal-title { font-size:14px; font-weight:700; }
-.modal-close { background:none; border:none; color:var(--fg-dim); font-size:18px; cursor:pointer; padding:2px 6px; border-radius:4px; line-height:1; }
-.modal-close:hover { background:var(--gray-lt); }
-.modal-body { padding:16px 20px; overflow-y:auto; flex:1; }
-.modal-footer { display:flex; justify-content:flex-end; gap:8px; padding:14px 20px; border-top:1px solid var(--border); }
+/* ── 가이드 ── */
+.guide-section { background: var(--panel); border-radius: 8px; border: 1px solid var(--border); padding: 20px 24px; margin-bottom: 16px; }
+.guide-section-title { font-size: 14px; font-weight: 700; color: var(--blue); margin-bottom: 12px; }
+.guide-formula { background: #F0F4FF; border: 1px solid #BFDBFE; border-left: 4px solid var(--blue); border-radius: 6px; padding: 14px 18px; margin: 12px 0; font-family: var(--mono); font-size: 12px; line-height: 2; }
+.guide-var { color: var(--blue-d); font-weight: 600; }
+.guide-result { color: var(--green); font-weight: 700; }
+.guide-warn { background: var(--amber-lt); border: 1px solid #FCD34D; border-radius: 6px; padding: 10px 14px; margin: 10px 0; font-size: 12px; color: #92400E; }
+.guide-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 10px 0; }
+.guide-table th { background: var(--blue-lt); color: var(--blue); font-weight: 700; padding: 7px 10px; text-align: left; border: 1px solid #BFDBFE; }
+.guide-table td { padding: 7px 10px; border: 1px solid var(--border); }
+.guide-step { display: flex; gap: 12px; margin-bottom: 12px; }
+.guide-step-num { width: 24px; height: 24px; background: var(--blue); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.guide-step-content { font-size: 12px; line-height: 1.8; flex: 1; }
+
+/* ── 버튼 ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 16px; border: none; border-radius: 6px;
+  font-family: var(--sans); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all var(--tr); white-space: nowrap;
+}
+.btn-blue  { background: var(--blue); color: #fff; }
+.btn-blue:hover  { background: var(--blue-d); }
+.btn-green { background: var(--green); color: #fff; }
+.btn-green:hover { background: #15803D; }
+.btn-red   { background: transparent; color: var(--red); border: 1px solid var(--red); }
+.btn-red:hover   { background: var(--red); color: #fff; }
+.btn-teal  { background: #0D9488; color: #fff; }
+.btn-teal:hover  { background: #0F766E; }
+.btn-ghost { background: var(--gray-lt); color: var(--gray); border: 1px solid var(--border2); }
+.btn-ghost:hover { color: var(--fg); }
+.btn-sm { padding: 4px 10px; font-size: 11px; }
+.btn-bar { display: flex; gap: 8px; padding: 16px 22px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+
+/* ── 분석 카드 ── */
+.analysis-card { background: var(--blue-lt); border: 1px solid #BFDBFE; border-radius: 8px; padding: 12px 16px; margin-bottom: 14px; }
+.analysis-label { font-size: 10px; color: var(--blue); font-weight: 700; letter-spacing: 0.08em; margin-bottom: 5px; }
+.analysis-value { font-family: var(--mono); font-size: 13px; color: var(--blue-d); min-height: 18px; }
+.analysis-value.error { color: var(--red); }
+.analysis-value.muted { color: var(--fg-muted); font-family: var(--sans); }
+
+/* ── 드롭다운 ── */
+.lower-opt { padding: 8px 14px; font-family: var(--mono); font-size: 12px; color: var(--fg); cursor: pointer; transition: background var(--tr); }
+.lower-opt:hover { background: var(--blue-lt); color: var(--blue); }
 
 /* ── 테이블 ── */
-.data-table { width:100%; border-collapse:collapse; }
-.data-table th { font-family:var(--mono); font-size:10px; color:var(--blue); letter-spacing:0.08em; text-transform:uppercase; font-weight:700; text-align:left; padding:8px 10px; border-bottom:2px solid var(--border); }
-.data-table td { font-family:var(--mono); font-size:12px; padding:8px 10px; border-bottom:1px solid var(--border); color:var(--fg); }
-.data-table tr:last-child td { border-bottom:none; }
-.data-table tr:hover td { background:var(--blue-lt); }
-.td-rate { color:var(--green); font-weight:600; }
-.modal-avg { font-family:var(--mono); font-size:13px; font-weight:700; color:var(--green); }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { font-family: var(--mono); font-size: 10px; color: var(--blue); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--border); }
+.data-table td { font-family: var(--mono); font-size: 12px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--blue-lt); }
+.td-rate { color: var(--green); font-weight: 600; }
+.modal-avg { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--green); margin-top: 2px; }
 
 /* ── 토스트 ── */
-.toast { position:fixed; bottom:24px; right:24px; background:var(--panel); border:1px solid var(--border2); border-radius:var(--radius); padding:12px 18px; font-size:12px; z-index:200; display:flex; align-items:center; gap:10px; box-shadow:var(--shadow-md); animation:toastIn 0.2s ease; }
-.toast.success { border-left:3px solid var(--green); }
-.toast.error   { border-left:3px solid var(--red); }
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--panel); border: 1px solid var(--border2); border-radius: 8px; padding: 12px 18px; font-size: 12px; z-index: 200; display: flex; align-items: center; gap: 10px; box-shadow: var(--shadow-md); animation: toastIn 0.2s ease; }
+.toast.success { border-left: 3px solid var(--green); }
+.toast.error   { border-left: 3px solid var(--red); }
 @keyframes toastIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 
 /* ── 로딩 ── */
-.loading { display:flex; align-items:center; justify-content:center; height:100%; color:var(--fg-dim); gap:10px; font-family:var(--mono); font-size:12px; }
-.spinner { width:18px; height:18px; border:2px solid var(--border2); border-top-color:var(--blue); border-radius:50%; animation:spin 0.7s linear infinite; }
+.loading { display: flex; align-items: center; justify-content: center; height: 200px; color: var(--fg-dim); gap: 10px; font-family: var(--mono); font-size: 12px; }
+.spinner { width: 18px; height: 18px; border: 2px solid var(--border2); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to{transform:rotate(360deg)} }
 
-.lower-opt {
-  padding: 8px 14px; font-family: var(--mono); font-size: 12px;
-  color: var(--fg); cursor: pointer; transition: background var(--transition);
-}
-.lower-opt:hover { background: var(--blue-lt); color: var(--blue); }
-.stat-card {
-  background: var(--panel); border: 1px solid var(--border);
-  border-radius: 8px; padding: 20px; text-align: center; box-shadow: var(--shadow);
-}
-.stat-card-num { font-family: var(--mono); font-size: 28px; font-weight: 700; margin-bottom: 4px; }
-.stat-card-lbl { font-size: 12px; color: var(--fg-dim); }
-.reason-bar-wrap { margin-bottom: 14px; }
-.reason-bar-label { display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:var(--fg); }
-.reason-bar-bg { background: var(--gray-lt); border-radius: 4px; height: 10px; overflow: hidden; }
-.reason-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
-.profit-card {
-  margin: 10px 14px 0;
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  transition: all 0.3s ease;
-}
-.profit-card.safe    { background: #F0FDF4; border-color: #86EFAC; }
-.profit-card.warning { background: #FFFBEB; border-color: #FCD34D; }
-.profit-card.danger  { background: #FEF2F2; border-color: #FCA5A5; }
-.profit-card.idle    { background: var(--surface); border-color: var(--border); }
-.profit-card-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
-.profit-card-label { font-size:10px; font-weight:600; letter-spacing:0.06em; }
-.profit-card.safe    .profit-card-label { color: #16A34A; }
-.profit-card.warning .profit-card-label { color: #D97706; }
-.profit-card.danger  .profit-card-label { color: var(--red); }
-.profit-card.idle    .profit-card-label { color: var(--fg-muted); }
-.profit-card-rate { font-family:var(--mono); font-size:22px; font-weight:700; }
-.profit-card.safe    .profit-card-rate { color: #16A34A; }
-.profit-card.warning .profit-card-rate { color: #D97706; }
-.profit-card.danger  .profit-card-rate { color: var(--red); }
-.profit-card.idle    .profit-card-rate { color: var(--fg-muted); }
-.profit-card-msg { font-size:11px; margin-top:2px; }
-.profit-card.safe    .profit-card-msg { color: #15803D; }
-.profit-card.warning .profit-card-msg { color: #92400E; }
-.profit-card.danger  .profit-card-msg { color: #991B1B; }
-.profit-card.idle    .profit-card-msg { color: var(--fg-muted); }
-.confirm-msg { font-size:13px; line-height:1.7; color:var(--fg); }
-.confirm-project { font-family:var(--mono); color:var(--blue); font-weight:600; }
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 160px; color: var(--fg-muted); gap: 8px; }
+.empty-icon { font-size: 32px; opacity: 0.3; }
+.empty-text { font-family: var(--mono); font-size: 11px; }
+
+.confirm-msg { font-size: 13px; line-height: 1.7; }
+.confirm-project { font-family: var(--mono); color: var(--blue); font-weight: 600; }
+
+/* ── 결과분석 배지 ── */
+.net98-badge { font-size: 11px; color: var(--red); font-family: var(--mono); padding: 4px 10px; background: var(--red-lt); border-radius: 4px; white-space: nowrap; }
+.act-msg { font-size: 12px; font-weight: 700; margin-top: 6px; }
 </style>
 </head>
 <body>
 
-<!-- 헤더 -->
-<header class="header">
-  <span class="header-icon">📋</span>
-  <span class="header-title">입찰 관리 시스템</span>
-  <nav class="header-tabs">
-    <button class="header-tab active" onclick="switchTab('main')">입찰 관리</button>
-    <button class="header-tab" onclick="switchTab('stats')">📊 현황 분석</button>
-    <button class="header-tab" onclick="switchTab('guide')">📖 계산식 안내</button>
-  </nav>
-  <div class="header-status">
-    <div class="status-dot" id="dbDot" style="background:#FCA5A5"></div>
+<!-- ── 네비바 ── -->
+<nav class="navbar">
+  <div class="nav-logo">BIDDING STRATEGY <span>v5.0</span></div>
+  <div class="nav-status">
+    <div class="status-dot" id="dbDot"></div>
     <span id="dbStatus">연결 중...</span>
   </div>
-  <span class="header-date" id="headerDate"></span>
-</header>
+  <div class="nav-right">
+    <button class="nav-btn" onclick="openListModal()">📋 목록</button>
+    <button class="nav-btn" onclick="openStatsModal()">📊 현황 분석</button>
+    <button class="nav-btn" onclick="openCalModal()">📅 달력</button>
+    <button class="nav-btn" onclick="openGuideModal()">📖 계산식 안내</button>
+    <span class="nav-date" id="headerDate"></span>
+  </div>
+</nav>
 
-<div class="body">
+<!-- ── 메인 ── -->
+<div class="container">
 
-  <!-- 왼쪽 입력 패널 -->
-  <aside class="left">
+  <!-- 왼쪽 -->
+  <div>
 
-    <!-- 발주처 분석 -->
-    <div style="padding:0 0 0 0;">
-      <div class="section-hd" style="margin-top:0; border-top:none;">발주처 분석</div>
-      <div style="padding:10px 14px 0;">
-        <div class="analysis-card">
-          <div class="analysis-card-label">분석 결과</div>
+    <!-- 입찰 분석 정보 입력 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">📌 입찰 분석 정보 입력</span>
+        <div class="analysis-card" style="margin:0; padding:8px 14px; min-width:280px;">
+          <div class="analysis-label">발주처 분석 결과</div>
           <div class="analysis-value muted" id="analysisResult">발주처를 입력하세요</div>
-          <div class="analysis-actions">
-            <button class="btn btn-ghost btn-sm" onclick="showHistory()">📊 이력 보기</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="input-group">
+            <label>발주처</label>
+            <input id="f_client" placeholder="발주처명" oninput="onClientInput()">
+          </div>
+          <div class="input-group">
+            <label>공고번호</label>
+            <input id="f_notice" placeholder="공고번호">
+          </div>
+          <div class="input-group full">
+            <label>공사명</label>
+            <input id="f_project" placeholder="공사명">
+          </div>
+          <div class="input-group">
+            <label>1차 종료일시</label>
+            <input id="f_end1" placeholder="YYYY/MM/DD HH:MM:SS">
+          </div>
+          <div class="input-group">
+            <label>2차 시작일시</label>
+            <input id="f_start2" placeholder="YYYY/MM/DD HH:MM:SS">
+          </div>
+
+          <hr class="divider">
+
+          <div class="input-group">
+            <label>기초금액</label>
+            <input id="f_base" placeholder="0" oninput="fmtMoney(this);debounceCalc()">
+          </div>
+          <div class="input-group">
+            <label>순공사원가</label>
+            <input id="f_net" placeholder="0" oninput="fmtMoney(this);debounceCalc()">
+          </div>
+
+          <div class="input-group full">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="sub-label" id="lbl98" style="flex:1;">배제기준(98%): —</div>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>배제기준(98%)</label>
+            <div class="radio-row">
+              <label><input type="radio" name="r_limit" id="r_limit_on" value="on" onchange="debounceCalc()"> 적용</label>
+              <label><input type="radio" name="r_limit" id="r_limit_off" value="off" checked onchange="debounceCalc()"> 미적용</label>
+            </div>
+          </div>
+          <div class="input-group">
+            <label>예비가격범위</label>
+            <div class="radio-row">
+              <label><input type="radio" name="r_reserve" id="r_reserve_2" value="2" onchange="debounceCalc()"> ±2%</label>
+              <label><input type="radio" name="r_reserve" id="r_reserve_3" value="3" checked onchange="debounceCalc()"> ±3%</label>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>낙찰하한율(%)</label>
+            <div style="position:relative; display:flex; align-items:center;">
+              <input id="f_lower" value="87.745" autocomplete="off" oninput="debounceCalc()" style="width:100%; padding-right:28px;">
+              <button onclick="toggleLowerList()" type="button" style="position:absolute; right:8px; background:none; border:none; color:var(--fg-muted); cursor:pointer; font-size:11px;">▼</button>
+              <div id="lowerList" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--panel); border:1px solid var(--border2); border-radius:6px; box-shadow:var(--shadow-md); z-index:50; overflow:hidden; margin-top:2px;">
+                <div class="lower-opt" onclick="pickLower('89.745')">89.745%</div>
+                <div class="lower-opt" onclick="pickLower('88.745')">88.745%</div>
+                <div class="lower-opt" onclick="pickLower('87.745')">87.745%</div>
+                <div class="lower-opt" onclick="pickLower('87.495')">87.495%</div>
+                <div class="lower-opt" onclick="pickLower('86.745')">86.745%</div>
+                <div class="lower-opt" onclick="pickLower('85.745')">85.745%</div>
+              </div>
+            </div>
+          </div>
+          <div class="input-group">
+            <label>A값</label>
+            <input id="f_a" placeholder="0" oninput="fmtMoney(this);debounceCalc()">
+          </div>
+
+          <div class="input-group">
+            <label>사정률(%)</label>
+            <input id="f_adjust" placeholder="100.0000" value="100.0000" oninput="debounceCalc()">
+          </div>
+          <div class="input-group">
+            <label>추천 투찰금액</label>
+            <input id="f_rec" placeholder="—" readonly style="color:var(--green); font-weight:600; background:var(--green-lt);">
+          </div>
+
+          <div class="input-group">
+            <label>실제 투찰금액</label>
+            <input id="f_real_bid" placeholder="추천금액 자동입력" oninput="fmtMoney(this);updateBidDiff()">
+          </div>
+          <div class="input-group">
+            <label>실제 낙찰가</label>
+            <input id="f_actual" placeholder="0" oninput="fmtMoney(this);updateBidDiff()">
+          </div>
+          <div id="bidDiffWrap" class="full" style="display:none; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-family:var(--mono); font-size:11px;">
+            <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
+              <span id="bidDiffRec"></span>
+              <span id="bidDiffReal"></span>
+              <span id="bidDiffWinner" style="font-weight:700; margin-left:auto;"></span>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>실제 기초금액 <span style="color:var(--blue); font-size:10px;">개찰후 입력</span></label>
+            <input id="f_real_base" placeholder="개찰결과에서 확인" oninput="fmtMoney(this)">
+          </div>
+          <div class="input-group">
+            <label>실제 순공사원가 <span style="color:var(--blue); font-size:10px;">배제기준 적용 시만</span></label>
+            <input id="f_real_net" placeholder="배제기준 적용 시만" oninput="fmtMoney(this)">
+          </div>
+
+          <div class="input-group full">
+            <label>탈락사유</label>
+            <div style="position:relative; display:flex; align-items:center;">
+              <input id="f_result_reason" placeholder="선택 또는 직접입력" autocomplete="off" style="width:100%; padding-right:28px;">
+              <button onclick="toggleReasonList()" type="button" style="position:absolute; right:8px; background:none; border:none; color:var(--fg-muted); cursor:pointer; font-size:11px;">▼</button>
+              <div id="reasonList" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--panel); border:1px solid var(--border2); border-radius:6px; box-shadow:var(--shadow-md); z-index:50; overflow:hidden; margin-top:2px;">
+                <div class="lower-opt" onclick="pickReason('낙찰')">🎉 낙찰</div>
+                <div class="lower-opt" onclick="pickReason('정상')">정상 (낙찰가보다 높음)</div>
+                <div class="lower-opt" onclick="pickReason('낙찰하한선 미달')">낙찰하한선 미달</div>
+                <div class="lower-opt" onclick="pickReason('순공사원가 98%미만')">순공사원가 98%미만</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="btn-bar">
+        <button class="btn btn-green"  onclick="clearForm()">＋ 신규</button>
+        <button class="btn btn-blue"   onclick="saveRecord()">💾 저장</button>
+        <button class="btn btn-teal"   onclick="toggleBid()">◆ 투찰</button>
+        <button class="btn btn-red"    onclick="deleteRecord()">🗑 삭제</button>
+        <button class="btn btn-ghost btn-sm" onclick="showHistory()" style="margin-left:auto;">📊 이력 보기</button>
+      </div>
+    </div>
+
+    <!-- 사후 복기 카드 -->
+    <div class="card actual">
+      <div class="card-header">
+        <span class="card-title">📋 실제 개찰 결과 분석 (사후 복기)</span>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="input-group">
+            <label>예정가격 (실제 기초금액)</label>
+            <input id="act_base" placeholder="개찰 후 예정가격" oninput="fmtMoney(this);runActCalc()">
+          </div>
+          <div class="input-group">
+            <label>예정가격 중 순공사원가</label>
+            <input id="act_net" placeholder="개찰 후 순공사원가" oninput="fmtMoney(this);runActCalc()">
+          </div>
+
+          <div class="full">
+            <table class="summary-table">
+              <tr>
+                <td style="width:18%;"><span class="lbl">공고기초금액</span><span class="val" id="sum_base">—</span></td>
+                <td rowspan="2" class="adj-cell" style="width:13%;"><span class="lbl">사정율</span><span class="val" id="sum_adjust_rate">—</span></td>
+                <td style="width:18%;"><span class="lbl">예정금액</span><span class="val" id="sum_est_price">—</span></td>
+                <td style="width:12%;"><span class="lbl">낙찰하한율</span><span class="val" id="sum_lower_rate">—</span></td>
+                <td style="width:12%;"><span class="lbl">A값</span><span class="val" id="sum_a">—</span></td>
+                <td class="rec-cell" style="width:27%;"><span class="lbl">추천투찰가</span><span class="val" id="sum_recommend">—</span></td>
+              </tr>
+              <tr>
+                <td><span class="lbl">공고순공사원가</span><span class="val" id="sum_net">—</span></td>
+                <td><span class="lbl">예정순공사원가</span><span class="val" id="sum_est_net">—</span></td>
+                <td colspan="2"><span class="lbl">예정순공사원가 98%</span><span class="val" id="sum_net98">—</span></td>
+                <td class="rec-cell"><span class="lbl">역산 사정률</span><span class="val" id="sum_inv_rate">—</span></td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="input-group full">
+            <label>실제 낙찰가 (1순위)</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input id="act_price" style="flex:1;" placeholder="실제 낙찰 금액" oninput="fmtMoney(this);runActCalc()">
+              <div class="net98-badge" id="act_net98_badge" style="display:none;">98%기준: <span id="act_net98_val"></span></div>
+            </div>
+            <div class="act-msg" id="act_analysis_msg"></div>
           </div>
         </div>
       </div>
     </div>
+
+  </div>
+
+  <!-- 오른쪽 (sticky) -->
+  <div style="position:sticky; top:72px;">
 
     <!-- 수익성 카드 -->
     <div class="profit-card idle" id="profitCard">
-      <div class="profit-card-top">
-        <span class="profit-card-label" id="profitLabel">수익성 분석</span>
-        <span class="profit-card-rate" id="profitRate">—</span>
+      <div class="profit-zone" id="profitZone">분석 대기 중</div>
+      <div class="profit-rate" id="profitRate">—</div>
+      <div class="profit-sub" id="profitSub">
+        90.0% 이하 안정권<br>
+        90.0~92.0% 주의 구간<br>
+        92.0% 초과 위험 구간
       </div>
-      <div class="profit-card-msg" id="profitMsg">기초금액과 순공사원가를 입력하세요</div>
-    </div>
-
-    <!-- 예비가격범위 + 입력 폼 -->
-    <div class="section-hd">입찰 정보 입력</div>
-    <div class="form-scroll">
-      <div class="field"><span class="field-label">발주처</span><input class="field-input" id="f_client" placeholder="발주처명" oninput="onClientInput()"></div>
-      <div class="field"><span class="field-label">공사명</span><input class="field-input" id="f_project" placeholder="공사명"></div>
-      <div class="field"><span class="field-label">공고번호</span><input class="field-input" id="f_notice" placeholder="공고번호"></div>
-      <div class="field"><span class="field-label">1차 종료일시</span><input class="field-input" id="f_end1" placeholder="YYYY/MM/DD HH:MM:SS"></div>
-      <div class="field"><span class="field-label">2차 시작일시</span><input class="field-input" id="f_start2" placeholder="YYYY/MM/DD HH:MM:SS"></div>
-      <div class="field"><span class="field-label">기초금액</span><input class="field-input" id="f_base" placeholder="0" oninput="fmtMoney(this);debounceCalc()"></div>
-      <div class="field"><span class="field-label">순공사원가</span><input class="field-input" id="f_net" placeholder="0" oninput="fmtMoney(this);debounceCalc()"></div>
-      <div class="field" style="min-height:36px;">
-        <span class="field-label">배제기준</span>
-        <div style="display:flex; align-items:center; gap:10px; padding:0 10px;">
-          <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-family:var(--mono); font-size:12px;">
-            <input type="radio" name="r_limit" id="r_limit_on" value="on" onchange="debounceCalc()" style="cursor:pointer;">
-            적용
-          </label>
-          <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-family:var(--mono); font-size:12px;">
-            <input type="radio" name="r_limit" id="r_limit_off" value="off" checked onchange="debounceCalc()" style="cursor:pointer;">
-            미적용
-          </label>
-        </div>
-      </div>
-      <div class="field-sub" id="lbl98">배제기준(98%): —</div>
-      <div class="field">
-        <span class="field-label">예비가격범위</span>
-        <div style="display:flex; align-items:center; gap:12px; padding:0 10px;">
-          <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-family:var(--mono); font-size:12px;">
-            <input type="radio" name="r_reserve" id="r_reserve_2" value="2" onchange="debounceCalc()" style="cursor:pointer;"> ±2%
-          </label>
-          <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-family:var(--mono); font-size:12px;">
-            <input type="radio" name="r_reserve" id="r_reserve_3" value="3" checked onchange="debounceCalc()" style="cursor:pointer;"> ±3%
-          </label>
-        </div>
-      </div>
-      <div class="field">
-        <span class="field-label">낙찰하한율(%)</span>
-        <div style="position:relative; display:flex; align-items:center; width:100%;">
-          <input class="field-input" id="f_lower" value="87.745"
-                 autocomplete="off" oninput="debounceCalc()"
-                 style="width:100%; padding-right:28px;">
-          <button onclick="toggleLowerList()" type="button"
-                  style="position:absolute; right:6px; background:none; border:none;
-                         color:var(--fg-muted); cursor:pointer; font-size:11px; padding:2px;">▼</button>
-          <div id="lowerList" style="display:none; position:absolute; top:100%; left:0; right:0;
-               background:var(--panel); border:1px solid var(--border2); border-radius:4px;
-               box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:50; overflow:hidden;">
-            <div class="lower-opt" onclick="pickLower('89.745')">89.745%</div>
-            <div class="lower-opt" onclick="pickLower('88.745')">88.745%</div>
-            <div class="lower-opt" onclick="pickLower('87.745')">87.745%</div>
-            <div class="lower-opt" onclick="pickLower('87.495')">87.495%</div>
-            <div class="lower-opt" onclick="pickLower('86.745')">86.745%</div>
-            <div class="lower-opt" onclick="pickLower('85.745')">85.745%</div>
-          </div>
-        </div>
-      </div>
-      <div class="field"><span class="field-label">A값</span><input class="field-input" id="f_a" placeholder="0" oninput="fmtMoney(this);debounceCalc()"></div>
-      <div class="field"><span class="field-label">사정률(%)</span><input class="field-input" id="f_adjust" placeholder="100.0000" value="100.0000" oninput="debounceCalc()"></div>
-      <div class="field"><span class="field-label">추천 투찰금액</span><input class="field-input rec" id="f_rec" placeholder="—" readonly></div>
-      <div class="field"><span class="field-label">실제 투찰금액</span><input class="field-input" id="f_real_bid" placeholder="추천금액 자동입력" oninput="fmtMoney(this);updateBidDiff();this.dataset.userModified='true'"></div>
-      <div class="field"><span class="field-label">실제 낙찰가</span><input class="field-input" id="f_actual" placeholder="0" oninput="fmtMoney(this);updateBidDiff()"></div>
-      <div id="bidDiffWrap" style="display:none; grid-column:1/-1; padding:8px 14px; background:var(--surface); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:11px;">
-        <div style="display:flex; gap:20px; flex-wrap:wrap;">
-          <span id="bidDiffRec"></span>
-          <span id="bidDiffReal"></span>
-          <span id="bidDiffWinner" style="font-weight:700;"></span>
-        </div>
-      </div>
-      <div class="field"><span class="field-label" style="color:var(--blue);">실제 기초금액</span><input class="field-input" id="f_real_base" placeholder="개찰결과에서 확인" oninput="fmtMoney(this)"></div>
-      <div class="field"><span class="field-label" style="color:var(--blue);">실제 순공사원가</span><input class="field-input" id="f_real_net" placeholder="배제기준 적용 시만" oninput="fmtMoney(this)"></div>
-      <div class="field">
-        <span class="field-label">탈락사유</span>
-        <div style="position:relative; display:flex; align-items:center; width:100%;">
-          <input class="field-input" id="f_result_reason" placeholder="선택 또는 직접입력"
-                 autocomplete="off" style="width:100%; padding-right:28px;">
-          <button onclick="toggleReasonList()" type="button"
-                  style="position:absolute; right:6px; background:none; border:none;
-                         color:var(--fg-muted); cursor:pointer; font-size:11px; padding:2px;">▼</button>
-          <div id="reasonList" style="display:none; position:absolute; top:100%; left:0; right:0;
-               background:var(--panel); border:1px solid var(--border2); border-radius:4px;
-               box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:50; overflow:hidden;">
-            <div class="lower-opt" onclick="pickReason('낙찰')">낙찰 🎉</div>
-            <div class="lower-opt" onclick="pickReason('정상')">정상 (낙찰가보다 높음)</div>
-            <div class="lower-opt" onclick="pickReason('낙찰하한선 미달')">낙찰하한선 미달</div>
-            <div class="lower-opt" onclick="pickReason('순공사원가 98%미만')">순공사원가 98%미만</div>
-          </div>
-        </div>
+      <div class="diff-box">
+        <div class="diff-label">추천투찰가 대비 수익성</div>
+        <div class="diff-amount" id="diffAmount">— 원</div>
+        <div class="diff-msg" id="diffMsg">—</div>
       </div>
     </div>
 
-    <!-- 버튼 바 -->
-    <div class="btn-bar">
-      <button class="btn btn-green"  onclick="clearForm()">＋ 신규</button>
-      <button class="btn btn-blue"   onclick="saveRecord()">💾 저장</button>
-      <button class="btn btn-teal"   onclick="toggleBid()">◆ 투찰</button>
-      <button class="btn btn-red"    onclick="deleteRecord()">🗑 삭제</button>
-    </div>
-
-  </aside>
-
-  <!-- 오른쪽 목록 -->
-  <main class="right">
-    <div class="list-toolbar">
-      <div class="search-box">
-        <span class="search-icon">⌕</span>
-        <input class="search-input" id="searchInput" placeholder="공사명, 공고번호, 발주처 검색..." oninput="renderList()">
+    <!-- 시뮬레이션 결과 -->
+    <div class="card">
+      <div class="card-header" style="border-color: var(--border2);">
+        <span class="card-title" style="font-size:14px;">📊 시뮬레이션 결과</span>
       </div>
-      <button class="filter-btn" id="fBtn0" onclick="setFilter(0)">전체</button>
-      <button class="filter-btn active-blue" id="fBtn1" onclick="setFilter(1)">진행중</button>
-      <button class="filter-btn" id="fBtn2" onclick="setFilter(2)">투찰완료</button>
-      <button class="filter-btn" id="fBtn3" onclick="setFilter(3)">개찰완료</button>
-      <span class="count-badge" id="countBadge">총 0건</span>
-      <button class="filter-btn" onclick="openCalendar()" style="margin-left:4px;">📅 달력</button>
+      <div class="card-body">
+        <div class="sim-item">
+          <span class="sim-item-label">추천 투찰가</span>
+          <span class="sim-item-value" id="res_rec">—</span>
+        </div>
+        <div class="sim-item" style="color:var(--red-lt);">
+          <span class="sim-item-label" style="color:var(--red);">배제기준 (98%)</span>
+          <span class="sim-item-value" style="color:var(--red);" id="res_98">—</span>
+        </div>
+        <div class="sim-main">
+          <div class="sim-main-label">최종 투찰 제안금액</div>
+          <div class="sim-main-value" id="res_final">—</div>
+          <div class="sim-main-sub" id="res_status">—</div>
+        </div>
+        <button class="btn-process" onclick="openProcessModal()">🔍 입찰가 결정 과정 보기</button>
+      </div>
     </div>
-    <div class="list-wrap" id="listWrap">
-      <div class="loading"><div class="spinner"></div> 데이터 불러오는 중...</div>
-    </div>
-  </main>
 
-
+  </div>
 </div>
 
-  <!-- 현황 분석 페이지 -->
-  <div class="guide-page" id="statsPage">
-    <div style="max-width:900px; margin:0 auto;">
+<!-- ══ 팝업들 ══════════════════════════════════ -->
 
-      <!-- 전체 요약 -->
-      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px;" id="statsSummary"></div>
+<!-- 목록 팝업 -->
+<div class="overlay" id="listOverlay">
+  <div class="modal modal-lg">
+    <div class="modal-hd">
+      <span class="modal-title">📋 입찰 목록</span>
+      <button class="modal-close" onclick="closeModal('listOverlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="list-toolbar">
+        <div class="search-box">
+          <span style="color:var(--fg-muted);">⌕</span>
+          <input class="search-input" id="searchInput" placeholder="공사명, 공고번호, 발주처 검색..." oninput="renderList()">
+        </div>
+        <button class="filter-btn" id="fBtn0" onclick="setFilter(0)">전체</button>
+        <button class="filter-btn active-blue" id="fBtn1" onclick="setFilter(1)">진행중</button>
+        <button class="filter-btn" id="fBtn2" onclick="setFilter(2)">투찰완료</button>
+        <button class="filter-btn" id="fBtn3" onclick="setFilter(3)">개찰완료</button>
+        <span class="count-badge" id="countBadge">총 0건</span>
+      </div>
+      <div class="list-wrap" id="listWrap">
+        <div class="loading"><div class="spinner"></div> 불러오는 중...</div>
+      </div>
+    </div>
+  </div>
+</div>
 
-      <!-- 탈락사유별 현황 (드릴다운) -->
-      <div class="guide-section">
-        <div class="guide-section-title">📋 탈락사유별 현황 <span style="font-size:11px; font-weight:400; color:var(--fg-muted);">— 항목 클릭 시 해당 건 목록 표시</span></div>
+<!-- 현황 분석 팝업 -->
+<div class="overlay" id="statsOverlay">
+  <div class="modal modal-lg">
+    <div class="modal-hd">
+      <span class="modal-title">📊 현황 분석</span>
+      <button class="modal-close" onclick="closeModal('statsOverlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:18px;" id="statsSummary"></div>
+      <div style="margin-bottom:18px;">
+        <div style="font-size:13px; font-weight:700; color:var(--blue); margin-bottom:10px;">📋 탈락사유별 현황 <span style="font-size:11px; font-weight:400; color:var(--fg-muted);">— 클릭 시 목록 표시</span></div>
         <div id="statsReasonWrap"></div>
-        <div id="statsReasonDetail" style="display:none; margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
-          <div style="font-size:12px; font-weight:600; color:var(--blue); margin-bottom:10px;" id="statsReasonDetailTitle"></div>
-          <table class="guide-table">
+        <div id="statsReasonDetail" style="display:none; margin-top:14px; border-top:1px solid var(--border); padding-top:14px;">
+          <div style="font-size:12px; font-weight:700; color:var(--blue); margin-bottom:8px;" id="statsReasonDetailTitle"></div>
+          <table class="data-table">
             <thead><tr><th>날짜</th><th>발주처</th><th>공사명</th><th>투찰금액</th></tr></thead>
             <tbody id="statsReasonDetailBody"></tbody>
           </table>
         </div>
       </div>
-
-      <!-- 발주처별 현황 -->
-      <div class="guide-section">
-        <div class="guide-section-title">🏢 발주처별 낙찰/탈락 현황</div>
-        <table class="guide-table">
+      <div>
+        <div style="font-size:13px; font-weight:700; color:var(--blue); margin-bottom:10px;">🏢 발주처별 현황</div>
+        <table class="data-table">
           <thead><tr><th>발주처</th><th>전체</th><th>낙찰</th><th>탈락</th><th>평균 역산사정률</th><th>표준편차</th></tr></thead>
           <tbody id="statsClientBody"></tbody>
         </table>
       </div>
-
     </div>
   </div>
+</div>
 
-  <!-- 계산식 안내 페이지 -->
-  <div class="guide-page" id="guidePage">
-    <div style="max-width:760px; margin:0 auto;">
-
-      <div class="guide-section">
-        <div class="guide-section-title">📌 이 시스템의 목적</div>
-        <div class="guide-text">
-          <p>나라장터 적격심사 입찰에서 <strong>최적의 투찰금액을 계산</strong>하고, 과거 낙찰 데이터를 분석하여 발주처별 경향을 파악하는 시스템입니다.</p>
-          <p>입찰 공고문에서 기초금액, A값, 순공사원가, 낙찰하한율 등을 입력하면 추천 투찰금액이 자동으로 계산됩니다.</p>
-        </div>
+<!-- 달력 팝업 -->
+<div class="overlay" id="calOverlay">
+  <div class="modal modal-lg">
+    <div class="modal-hd">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+        <span class="modal-title" id="calTitle"></span>
+        <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
       </div>
-
-      <div class="guide-section">
-        <div class="guide-section-title">🔢 핵심 용어 설명</div>
-        <table class="guide-table">
-          <thead><tr><th>용어</th><th>의미</th><th>출처</th></tr></thead>
-          <tbody>
-            <tr><td><strong>기초금액</strong></td><td>발주처가 산정한 공사 기준금액</td><td>입찰 공고문</td></tr>
-            <tr><td><strong>A값</strong></td><td>기초금액에서 일정 비율로 산출된 기준값 (산술평균 방식)</td><td>입찰 공고문</td></tr>
-            <tr><td><strong>순공사원가</strong></td><td>실제 공사에 드는 최소 원가 (재료비+노무비+경비)</td><td>입찰 공고문</td></tr>
-            <tr><td><strong>낙찰하한율</strong></td><td>기초금액 대비 낙찰 가능한 최저 비율 (%)</td><td>입찰 공고문 (주로 87.745%)</td></tr>
-            <tr><td><strong>사정률</strong></td><td>낙찰하한율 구간 내 투찰 위치를 결정하는 비율 (%)</td><td>시스템 계산 / 과거 데이터 분석</td></tr>
-          </tbody>
-        </table>
+      <button class="modal-close" onclick="closeModal('calOverlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="cal-grid-header">
+        <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
       </div>
-
-      <div class="guide-section">
-        <div class="guide-section-title">🧮 추천 투찰금액 계산식</div>
-        <div class="guide-text">
-          <p>투찰금액은 아래 공식으로 계산됩니다.</p>
-        </div>
-        <div class="guide-formula">
-          <div class="formula-title">▶ 기본 계산식</div>
-          <span class="guide-result">투찰금액</span> = ( <span class="guide-var">기초금액</span> − <span class="guide-var">A값</span> ) × ( <span class="guide-var">낙찰하한율</span> ÷ 100 ) × ( <span class="guide-var">사정률</span> ÷ 100 ) + <span class="guide-var">A값</span>
-        </div>
-        <div class="guide-formula">
-          <div class="formula-title">▶ 예시 (기초금액 2,000,000,000 / A값 100,000,000 / 낙찰하한율 87.745% / 사정률 100%)</div>
-          투찰금액 = ( 2,000,000,000 − 100,000,000 ) × 0.87745 × 1.00 + 100,000,000<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 1,900,000,000 × 0.87745 + 100,000,000<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= <span class="guide-result">1,767,155,000</span>
-        </div>
-        <div class="guide-warn">
-          ⚠️ <strong>배제기준 적용:</strong> 계산된 투찰금액이 <strong>순공사원가 × 98%</strong> 보다 낮으면 자동으로 배제기준값으로 올라갑니다.<br>
-          배제기준보다 낮게 투찰하면 입찰에서 자동 배제되므로 반드시 확인이 필요합니다.
-        </div>
-      </div>
-
-      <div class="guide-section">
-        <div class="guide-section-title">📊 역산 사정률 계산식</div>
-        <div class="guide-text">
-          <p>과거 낙찰된 공사의 실제 낙찰가를 역으로 분석하여 "그때 사정률이 얼마였으면 이 금액이 나왔을까"를 계산합니다.</p>
-          <p>이 값들의 평균이 해당 발주처의 <strong>추천 사정률</strong>로 활용됩니다.</p>
-        </div>
-        <div class="guide-formula">
-          <div class="formula-title">▶ 역산 사정률 계산식</div>
-          <span class="guide-result">역산 사정률</span> = ( ( <span class="guide-var">실제낙찰금액</span> − <span class="guide-var">A값</span> ) ÷ ( <span class="guide-var">기초금액</span> − <span class="guide-var">A값</span> ) ) ÷ ( <span class="guide-var">낙찰하한율</span> ÷ 100 ) × 100
-        </div>
-      </div>
-
-      <div class="guide-section">
-        <div class="guide-section-title">🔄 업무 프로세스</div>
-        <div class="guide-step">
-          <div class="guide-step-num">1</div>
-          <div class="guide-step-content"><strong>입찰 공고 확인</strong> — 나라장터에서 공고문을 열어 기초금액, A값, 순공사원가, 낙찰하한율을 확인합니다.</div>
-        </div>
-        <div class="guide-step">
-          <div class="guide-step-num">2</div>
-          <div class="guide-step-content"><strong>정보 입력</strong> — 발주처명, 공사명, 공고번호, 1·2차 일시, 각 금액을 입력합니다. 발주처가 과거 데이터가 있으면 추천 사정률이 자동으로 채워집니다.</div>
-        </div>
-        <div class="guide-step">
-          <div class="guide-step-num">3</div>
-          <div class="guide-step-content"><strong>투찰금액 확인</strong> — 추천 투찰금액을 확인하고 배제기준 경고가 있는지 체크합니다. 사정률을 조정하여 금액을 변경할 수 있습니다.</div>
-        </div>
-        <div class="guide-step">
-          <div class="guide-step-num">4</div>
-          <div class="guide-step-content"><strong>저장 및 투찰</strong> — 저장 후 나라장터에서 실제 투찰합니다. 투찰 후 ◆ 투찰 버튼을 눌러 상태를 변경합니다.</div>
-        </div>
-        <div class="guide-step">
-          <div class="guide-step-num">5</div>
-          <div class="guide-step-content"><strong>개찰 결과 입력</strong> — 개찰 후 실제 낙찰가를 입력하고 저장합니다. 이 데이터가 다음 입찰의 추천 사정률 계산에 활용됩니다.</div>
-        </div>
-      </div>
-
-      <div class="guide-section">
-        <div class="guide-section-title">💡 낙찰하한율 선택 기준</div>
-        <div class="guide-text">
-          <p>낙찰하한율은 입찰 공고문에 명시된 값을 반드시 사용해야 합니다. 공고문에 없는 경우 기본값 <strong>87.745%</strong>를 적용합니다.</p>
-        </div>
-        <table class="guide-table">
-          <thead><tr><th>낙찰하한율</th><th>적용 기준</th></tr></thead>
-          <tbody>
-            <tr><td>89.745%</td><td>공고문에 명시된 경우</td></tr>
-            <tr><td>88.745%</td><td>공고문에 명시된 경우</td></tr>
-            <tr><td><strong>87.745%</strong></td><td>기본값 (공고문 미기재 시)</td></tr>
-            <tr><td>86.745%</td><td>공고문에 명시된 경우</td></tr>
-            <tr><td>85.745%</td><td>공고문에 명시된 경우</td></tr>
-          </tbody>
-        </table>
-      </div>
-
+      <div class="cal-grid" id="calGrid"></div>
     </div>
   </div>
+</div>
 
-
-<!-- 발주처 이력 모달 -->
+<!-- 발주처 이력 팝업 -->
 <div class="overlay" id="historyOverlay">
   <div class="modal">
     <div class="modal-hd">
@@ -799,27 +802,82 @@ body {
   </div>
 </div>
 
-<!-- 달력 모달 -->
-<div class="overlay" id="calOverlay">
-  <div class="modal" style="width:640px; max-height:90vh;">
+<!-- 계산식 안내 팝업 -->
+<div class="overlay" id="guideOverlay">
+  <div class="modal modal-lg">
     <div class="modal-hd">
-      <div style="display:flex; align-items:center; gap:16px;">
-        <button class="cal-nav-btn" onclick="changeMonth(-1)">&#8249;</button>
-        <span class="modal-title" id="calTitle"></span>
-        <button class="cal-nav-btn" onclick="changeMonth(1)">&#8250;</button>
-      </div>
-      <button class="modal-close" onclick="closeModal('calOverlay')">✕</button>
+      <span class="modal-title">📖 계산식 안내</span>
+      <button class="modal-close" onclick="closeModal('guideOverlay')">✕</button>
     </div>
-    <div class="modal-body" style="padding:16px;">
-      <div class="cal-grid-header">
-        <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+    <div class="modal-body">
+      <div class="guide-section">
+        <div class="guide-section-title">📌 이 시스템의 목적</div>
+        <p style="font-size:13px; line-height:1.8;">나라장터 적격심사 입찰에서 <strong>최적의 투찰금액을 계산</strong>하고, 과거 낙찰 데이터를 분석하여 발주처별 경향을 파악하는 시스템입니다.</p>
       </div>
-      <div class="cal-grid" id="calGrid"></div>
+      <div class="guide-section">
+        <div class="guide-section-title">🔢 핵심 용어</div>
+        <table class="guide-table">
+          <thead><tr><th>용어</th><th>의미</th><th>출처</th></tr></thead>
+          <tbody>
+            <tr><td><strong>기초금액</strong></td><td>발주처가 산정한 공사 기준금액</td><td>입찰 공고문</td></tr>
+            <tr><td><strong>A값</strong></td><td>복수예비가격 추첨 후 산술평균값 (정산비용)</td><td>입찰 공고문</td></tr>
+            <tr><td><strong>순공사원가</strong></td><td>실제 공사에 드는 최소 원가</td><td>입찰 공고문</td></tr>
+            <tr><td><strong>낙찰하한율</strong></td><td>기초금액 대비 낙찰 가능한 최저 비율</td><td>입찰 공고문</td></tr>
+            <tr><td><strong>사정률</strong></td><td>낙찰하한율 구간 내 투찰 위치를 결정하는 비율</td><td>시스템 계산</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="guide-section">
+        <div class="guide-section-title">🧮 추천 투찰금액 계산식</div>
+        <div class="guide-formula">
+          <span class="guide-result">투찰금액</span> = ( <span class="guide-var">기초금액</span> − <span class="guide-var">A값</span> ) × ( <span class="guide-var">낙찰하한율</span> ÷ 100 ) × ( <span class="guide-var">사정률</span> ÷ 100 ) + <span class="guide-var">A값</span>
+        </div>
+        <div class="guide-warn">⚠️ <strong>배제기준:</strong> 계산된 투찰금액이 순공사원가 × 98% 보다 낮으면 자동으로 올라갑니다. 공고문에 해당 조항이 있는 경우에만 적용하세요.</div>
+      </div>
+      <div class="guide-section">
+        <div class="guide-section-title">📊 역산 사정률</div>
+        <div class="guide-formula">
+          <span class="guide-result">역산 사정률</span> = ( ( <span class="guide-var">실제낙찰금액</span> − <span class="guide-var">A값</span> ) ÷ ( <span class="guide-var">기초금액</span> − <span class="guide-var">A값</span> ) ) ÷ ( <span class="guide-var">낙찰하한율</span> ÷ 100 ) × 100
+        </div>
+        <p style="font-size:12px; color:var(--fg-dim); margin-top:8px;">실제 기초금액(예정가격)이 있으면 더 정확한 역산 사정률을 계산합니다. 순공사원가 98%미만 탈락 건은 사정률이 왜곡되므로 평균 계산에서 제외됩니다.</p>
+      </div>
+      <div class="guide-section">
+        <div class="guide-section-title">🔄 업무 프로세스</div>
+        <div class="guide-step"><div class="guide-step-num">1</div><div class="guide-step-content"><strong>입찰 공고 확인</strong> — 기초금액, A값, 순공사원가, 낙찰하한율, 예비가격범위(±2%/±3%) 확인</div></div>
+        <div class="guide-step"><div class="guide-step-num">2</div><div class="guide-step-content"><strong>정보 입력</strong> — 발주처 입력 시 과거 데이터 기반 추천 사정률 자동 계산</div></div>
+        <div class="guide-step"><div class="guide-step-num">3</div><div class="guide-step-content"><strong>수익성 확인</strong> — 순공사원가/기초금액 비율로 안정권/주의/위험 판단 (92% 초과 시 입찰 재고)</div></div>
+        <div class="guide-step"><div class="guide-step-num">4</div><div class="guide-step-content"><strong>투찰 후 ◆ 버튼</strong> — 투찰 완료 상태로 변경</div></div>
+        <div class="guide-step"><div class="guide-step-num">5</div><div class="guide-step-content"><strong>개찰 후 사후 복기</strong> — 실제 예정가격/순공사원가/낙찰가 입력하여 역산 사정률 정확도 향상</div></div>
+      </div>
+      <div class="guide-section">
+        <div class="guide-section-title">💡 낙찰하한율 & 예비가격범위</div>
+        <table class="guide-table">
+          <thead><tr><th>낙찰하한율</th><th>적용 기준</th></tr></thead>
+          <tbody>
+            <tr><td>89.745% ~ 85.745%</td><td>공고문에 명시된 값 사용 (기본 87.745%)</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:12px; color:var(--fg-dim); margin-top:8px;">예비가격범위 ±2%는 변동폭이 작아 역산 사정률 신뢰도가 높고, ±3%는 변동폭이 커 표준편차가 크게 나올 수 있습니다. 같은 발주처라도 범위별로 구분하여 분석합니다.</p>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- 삭제 확인 모달 -->
+<!-- 입찰가 결정 과정 팝업 -->
+<div class="overlay" id="processOverlay">
+  <div class="modal modal-sm">
+    <div class="modal-hd">
+      <span class="modal-title">🔍 입찰가 결정 과정</span>
+      <button class="modal-close" onclick="closeModal('processOverlay')">✕</button>
+    </div>
+    <div class="modal-body" id="processBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('processOverlay')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 삭제 확인 팝업 -->
 <div class="overlay" id="deleteOverlay">
   <div class="modal modal-sm">
     <div class="modal-hd">
@@ -884,13 +942,12 @@ onSnapshot(q, snap => {
 // ── 날짜 정규화 ──────────────────────────────
 function normalizeDate(str) {
   if (!str) return str;
-  // 2026/03/26 15:00:00 → 2026-03-26 15:00
   return str.replace(/\//g, '-').replace(/(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}).*/, '$1 $2');
 }
 
 // ── 목록 렌더링 ───────────────────────────────
 function renderList() {
-  const kw   = document.getElementById('searchInput').value.trim().toLowerCase();
+  const kw   = (document.getElementById('searchInput')?.value||'').trim().toLowerCase();
   let   disp = [...records];
   if      (filterMode === 1) disp = disp.filter(r => !r.is_completed && r.status !== '투찰');
   else if (filterMode === 2) disp = disp.filter(r => r.status === '투찰');
@@ -901,15 +958,17 @@ function renderList() {
     (r.client||'').toLowerCase().includes(kw)
   );
 
-  document.getElementById('countBadge').textContent = `총 ${disp.length}건`;
+  const countEl = document.getElementById('countBadge');
+  if (countEl) countEl.textContent = `총 ${disp.length}건`;
   const wrap = document.getElementById('listWrap');
+  if (!wrap) return;
 
   if (!disp.length) {
     wrap.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">등록된 항목이 없습니다</div></div>`;
     return;
   }
 
-  wrap.innerHTML = disp.map((r) => {
+  wrap.innerHTML = disp.map(r => {
     const done  = r.is_completed;
     const bid   = r.status === '투찰';
     const sel   = r.notice === selectedNotice;
@@ -918,10 +977,10 @@ function renderList() {
     const badge = done ? '<span class="bid-badge badge-done">DONE</span>'
                 : bid  ? '<span class="bid-badge badge-bid">투찰</span>'
                        : '<span class="bid-badge badge-active">ACTIVE</span>';
-    const end1s  = (r.end1||'').slice(5, done ? 10 : 16);
-    const start2s= (r.start2||'').slice(5, done ? 10 : 16);
+    const end1s   = (r.end1||'').slice(5, done ? 10 : 16);
+    const start2s = (r.start2||'').slice(5, done ? 10 : 16);
     return `
-    <div class="bid-card ${done?'done':''} ${sel?'selected':''}" data-notice="${r.notice}">
+    <div class="bid-card ${sel?'selected':''}" data-notice="${r.notice}">
       <div class="bid-dot ${dotCls}">${dot}</div>
       <div>
         <div class="bid-client">${r.client||''}</div>
@@ -936,8 +995,10 @@ function renderList() {
   }).join('');
 
   wrap.querySelectorAll('.bid-card').forEach(el => {
-    const notice = el.dataset.notice;
-    el.onclick = () => selectItem(records.find(r => r.notice === notice));
+    el.onclick = () => {
+      const r = records.find(r => r.notice === el.dataset.notice);
+      if (r) { selectItem(r); closeModal('listOverlay'); }
+    };
   });
 }
 window.renderList = renderList;
@@ -946,7 +1007,6 @@ window.renderList = renderList;
 function selectItem(r) {
   if (!r) return;
   selectedNotice = r.notice;
-  renderList();
   sf('f_client',  r.client||'');
   sf('f_project', r.project||'');
   sf('f_notice',  r.notice||'');
@@ -961,46 +1021,50 @@ function selectItem(r) {
   sf('f_result_reason', r.result_reason || '');
   smf('f_real_base', r.real_base || '');
   smf('f_real_net',  r.real_net  || '');
+  smf('f_real_bid',  r.real_bid  || '');
+  window._realBidSet = true;
+  updateBidDiff();
   const reserve = r.reserve_range || '3';
   document.getElementById('r_reserve_2').checked = reserve === '2';
   document.getElementById('r_reserve_3').checked = reserve !== '2';
-  smf('f_real_bid',  r.real_bid  || '');
-  window._realBidSet = true;  // 기존 데이터는 자동입력 안 함
-  updateBidDiff();
   const limitOn = r.limit_applied !== false;
-  document.getElementById('r_limit_on').checked = limitOn;
+  document.getElementById('r_limit_on').checked  = limitOn;
   document.getElementById('r_limit_off').checked = !limitOn;
   analyzeClient(false);
   doCalc();
+  // 사후 복기 동기화
+  smf('act_base',  r.real_base || '');
+  smf('act_net',   r.real_net  || '');
+  smf('act_price', r.actual_result > 0 ? r.actual_result : '');
+  runActCalc();
 }
 window.selectItem = selectItem;
 
 // ── 폼 헬퍼 ──────────────────────────────────
-function sf(id, v)  { document.getElementById(id).value = v ?? ''; }
-function smf(id, v) { document.getElementById(id).value = v ? fmt(v) : ''; }
-function graw(id)   { return parseFloat((document.getElementById(id).value||'').replace(/,/g,'')) || 0; }
-function gstr(id)   { return (document.getElementById(id).value||'').trim(); }
+function sf(id, v)  { const el=document.getElementById(id); if(el) el.value = v ?? ''; }
+function smf(id, v) { const el=document.getElementById(id); if(el) el.value = v ? fmt(v) : ''; }
+function graw(id)   { return parseFloat((document.getElementById(id)?.value||'').replace(/,/g,'')) || 0; }
+function gstr(id)   { return (document.getElementById(id)?.value||'').trim(); }
 
 window.clearForm = function() {
   selectedNotice = null;
   ['f_client','f_project','f_notice','f_end1','f_start2',
    'f_base','f_net','f_a','f_actual','f_rec','f_result_reason',
-   'f_real_base','f_real_net','f_real_bid'].forEach(id => sf(id,''));
-  document.getElementById('bidDiffWrap').style.display = 'none';
-  const rbEl = document.getElementById('f_real_bid');
-  if (rbEl) delete rbEl.dataset.userModified;
-  window._realBidSet = false;
+   'f_real_base','f_real_net','f_real_bid',
+   'act_base','act_net','act_price'].forEach(id => sf(id,''));
   sf('f_adjust','100.0000');
   document.getElementById('f_lower').value = '87.745';
-  document.getElementById('r_limit_on').checked = false;
-  document.getElementById('r_limit_off').checked = true;
-  document.getElementById('r_reserve_3').checked = true;
-  document.getElementById('r_reserve_2').checked = false;
-  updateProfitCard(0, 0);
   document.getElementById('lbl98').textContent = '배제기준(98%): —';
   document.getElementById('analysisResult').textContent = '발주처를 입력하세요';
   document.getElementById('analysisResult').className = 'analysis-value muted';
-  renderList();
+  document.getElementById('bidDiffWrap').style.display = 'none';
+  document.getElementById('r_limit_off').checked = true;
+  document.getElementById('r_limit_on').checked  = false;
+  document.getElementById('r_reserve_3').checked = true;
+  document.getElementById('r_reserve_2').checked = false;
+  window._realBidSet = false;
+  updateProfitCard(0, 0);
+  runActCalc();
   document.getElementById('f_client').focus();
 };
 
@@ -1023,32 +1087,162 @@ function doCalc() {
   const a     = graw('f_a');
   const lower = parseFloat(document.getElementById('f_lower').value) || 87.745;
   const adj   = parseFloat(gstr('f_adjust')) || 100;
+  const limitOn = document.getElementById('r_limit_on')?.checked ?? false;
   const lbl   = document.getElementById('lbl98');
   const rec   = document.getElementById('f_rec');
-
-  const limitOn = document.getElementById('r_limit_on')?.checked ?? true;
   const limit98 = net * 0.98;
 
   if (net > 0 && limitOn) lbl.textContent = `배제기준(98%): ${fmt(limit98)}`;
   else if (net > 0)       lbl.textContent = `배제기준(98%): 미적용`;
   else                    lbl.textContent = '배제기준(98%): —';
+
   updateProfitCard(base, net);
 
-  if (!base) { rec.value = ''; return; }
+  if (!base) {
+    rec.value = '';
+    document.getElementById('res_rec').textContent   = '—';
+    document.getElementById('res_98').textContent    = '—';
+    document.getElementById('res_final').textContent = '—';
+    document.getElementById('res_status').textContent= '—';
+    document.getElementById('diffAmount').textContent= '— 원';
+    document.getElementById('diffMsg').textContent   = '—';
+    return;
+  }
 
   const raw    = ((base - a) * (lower/100) * (adj/100)) + a;
   const result = limitOn ? Math.max(raw, limit98) : raw;
-  const capped = limitOn && raw < limit98 && base > 0;
+  const capped = limitOn && raw < limit98;
 
-  rec.className = capped ? 'field-input capped' : 'field-input rec';
-  rec.value     = capped ? `${fmt(result)}  ⚠ 배제적용` : fmt(result);
-  // 실제 투찰금액 — 사용자가 직접 수정하지 않은 경우만 추천금액 따라감
+  rec.style.color = capped ? 'var(--amber)' : 'var(--green)';
+  rec.value = capped ? `${fmt(result)}  ⚠ 배제적용` : fmt(result);
+
+  // 수익성 차이
+  const diffAmt = result - net;
+  const diffEl  = document.getElementById('diffAmount');
+  const diffMsg = document.getElementById('diffMsg');
+  diffEl.textContent = (diffAmt >= 0 ? '+' : '') + fmt(diffAmt) + ' 원';
+  diffEl.style.color = diffAmt >= 0 ? 'var(--green)' : 'var(--red)';
+  if (diffAmt >= 0) {
+    diffMsg.innerHTML = `<span style="color:var(--green)">순원가 보전 +${fmt(diffAmt)}원 여유</span>`;
+  } else {
+    diffMsg.innerHTML = `<span style="color:var(--red)">순원가 대비 ${fmt(Math.abs(diffAmt))}원 부족</span>`;
+  }
+
+  // 시뮬레이션
+  document.getElementById('res_rec').textContent   = fmt(result) + ' 원';
+  document.getElementById('res_98').textContent    = net > 0 ? fmt(limit98) + ' 원' : '—';
+  document.getElementById('res_final').textContent = fmt(result) + ' 원';
+  document.getElementById('res_status').textContent= capped ? '⚠ 배제기준 적용됨' : '사정률 기준';
+
+  // 실제 투찰금액 최초 1회 자동입력
   const realBidEl = document.getElementById('f_real_bid');
-  if (realBidEl && !realBidEl.dataset.userModified) {
+  if (realBidEl && !window._realBidSet && !realBidEl.value) {
     realBidEl.value = fmt(result);
+    window._realBidSet = true;
   }
   updateBidDiff();
 }
+
+// ── 수익성 카드 ───────────────────────────────
+function updateProfitCard(base, net) {
+  const card = document.getElementById('profitCard');
+  const zone = document.getElementById('profitZone');
+  const rate = document.getElementById('profitRate');
+  const sub  = document.getElementById('profitSub');
+
+  if (!base || !net) {
+    card.className    = 'profit-card idle';
+    zone.textContent  = '분석 대기 중';
+    rate.textContent  = '—';
+    sub.innerHTML     = '90.0% 이하 안정권<br>90.0~92.0% 주의 구간<br>92.0% 초과 위험 구간';
+    return;
+  }
+
+  const ratio = (net / base) * 100;
+  rate.textContent = ratio.toFixed(2) + '%';
+
+  if (ratio <= 90) {
+    card.className   = 'profit-card safe';
+    zone.textContent = '✅ 90.0% 이하 안정권';
+    sub.textContent  = `순공사원가 비율 ${ratio.toFixed(2)}% — 배제기준 여유 있음`;
+  } else if (ratio <= 92) {
+    card.className   = 'profit-card warning';
+    zone.textContent = '⚠️ 90.0~92.0% 주의 구간';
+    sub.textContent  = `순공사원가 비율 ${ratio.toFixed(2)}% — 배제기준 근접, 신중한 투찰 필요`;
+  } else {
+    card.className   = 'profit-card danger';
+    zone.textContent = '🚨 92.0% 초과 위험 구간';
+    sub.textContent  = `순공사원가 비율 ${ratio.toFixed(2)}% — 손실 위험, 입찰 재고 권장`;
+  }
+}
+
+// ── 사후 복기 계산 ────────────────────────────
+window.runActCalc = function() {
+  const base    = graw('f_base');
+  const net     = graw('f_net');
+  const a       = graw('f_a');
+  const lower   = parseFloat(document.getElementById('f_lower').value) || 87.745;
+  const adj     = parseFloat(gstr('f_adjust')) || 100;
+  const actBase = graw('act_base');
+  const actNet  = graw('act_net');
+  const actPrice= graw('act_price');
+  const rec     = graw('f_rec') || (() => {
+    if (!base) return 0;
+    const limitOn = document.getElementById('r_limit_on')?.checked ?? false;
+    const raw = ((base - a) * (lower/100) * (adj/100)) + a;
+    return limitOn ? Math.max(raw, net * 0.98) : raw;
+  })();
+
+  // 요약 테이블 업데이트
+  document.getElementById('sum_base').textContent      = base > 0 ? fmt(base) : '—';
+  document.getElementById('sum_net').textContent       = net > 0  ? fmt(net)  : '—';
+  document.getElementById('sum_lower_rate').textContent= lower.toFixed(3) + '%';
+  document.getElementById('sum_a').textContent         = a > 0    ? fmt(a)    : '—';
+  document.getElementById('sum_recommend').textContent = rec > 0  ? fmt(rec)  : '—';
+  document.getElementById('sum_est_price').textContent = actBase > 0 ? fmt(actBase) : '—';
+  document.getElementById('sum_est_net').textContent   = actNet > 0  ? fmt(actNet)  : '—';
+  document.getElementById('sum_net98').textContent     = actNet > 0  ? fmt(actNet * 0.98) : '—';
+
+  // 사정율 계산 (actBase / base)
+  if (actBase > 0 && base > 0) {
+    document.getElementById('sum_adjust_rate').textContent = ((actBase / base) * 100).toFixed(4) + '%';
+  } else {
+    document.getElementById('sum_adjust_rate').textContent = '—';
+  }
+
+  // 역산 사정률
+  const useBase = actBase || base;
+  if (useBase > 0 && a > 0 && actPrice > 0) {
+    const denom = useBase - a;
+    if (denom > 0) {
+      const invRate = ((actPrice - a) / denom) / (lower / 100) * 100;
+      document.getElementById('sum_inv_rate').textContent = invRate.toFixed(4) + '%';
+    }
+  } else {
+    document.getElementById('sum_inv_rate').textContent = '—';
+  }
+
+  // 98% 배지
+  const badge = document.getElementById('act_net98_badge');
+  const msg   = document.getElementById('act_analysis_msg');
+  if (actNet > 0) {
+    const net98 = actNet * 0.98;
+    document.getElementById('act_net98_val').textContent = fmt(net98);
+    badge.style.display = 'inline-flex';
+    if (actPrice > 0) {
+      if (actPrice < net98) {
+        msg.innerHTML = `<span style="color:var(--red)">🚨 배제기준(${fmt(net98)}) 미만 — 순공사원가 98% 탈락</span>`;
+      } else if (actPrice <= net98 * 1.005) {
+        msg.innerHTML = `<span style="color:var(--amber)">⚠️ 배제기준 근접 낙찰 (차이: +${fmt(actPrice - net98)}원)</span>`;
+      } else {
+        msg.innerHTML = `<span style="color:var(--green)">✅ 정상 낙찰 (배제기준 대비 +${fmt(actPrice - net98)}원)</span>`;
+      }
+    } else { msg.textContent = ''; }
+  } else {
+    badge.style.display = 'none';
+    msg.textContent = '';
+  }
+};
 
 // ── 발주처 분석 ───────────────────────────────
 window.onClientInput = function() {
@@ -1067,13 +1261,10 @@ function analyzeClient(fillAdj = true) {
   const curReserve = document.querySelector('input[name="r_reserve"]:checked')?.value || '3';
   const completed  = records.filter(r => r.client === client && r.is_completed
     && r.result_reason !== '순공사원가 98%미만');
-
-  // 예비가격범위 구분
-  const matched = completed.filter(r => (r.reserve_range || '3') === curReserve);
-  const allRecs = completed; // 전체 (±3%는 전체 포함)
-
-  const useRecs = curReserve === '2' ? matched : allRecs;
-  const rates   = useRecs.map(r => calcEffAdj(r)).filter(v => v !== null);
+  const useRecs = curReserve === '2'
+    ? completed.filter(r => (r.reserve_range||'3') === '2')
+    : completed;
+  const rates = useRecs.map(r => calcEffAdj(r)).filter(v => v !== null);
 
   if (!rates.length) {
     el.textContent = `[${client}]  분석 데이터 없음 (±${curReserve}% 기준)`;
@@ -1081,15 +1272,13 @@ function analyzeClient(fillAdj = true) {
     return;
   }
   const avg = rates.reduce((a,b)=>a+b,0) / rates.length;
-  const rangeText = curReserve === '2' ? ` ±2%` : ` ±3%포함`;
-  el.textContent = `추천 사정률  ${avg.toFixed(4)}%   (${rates.length}건${rangeText})`;
+  el.textContent = `추천 사정률  ${avg.toFixed(4)}%   (${rates.length}건 ±${curReserve}%)`;
   el.className   = 'analysis-value';
   if (fillAdj) { sf('f_adjust', avg.toFixed(4)); doCalc(); }
 }
 
 // ── 역산 사정률 계산 ──────────────────────────
 function calcEffAdj(r) {
-  // 실제 기초금액이 있으면 우선 사용 (더 정확한 역산 사정률)
   const base  = r.real_base || r.base || 0;
   const a     = r.a_value || 0;
   const lower = r.lower_rate || 87.745;
@@ -1106,23 +1295,24 @@ window.saveRecord = async function() {
   const notice  = gstr('f_notice');
   if (!project || !notice) { toast('공사명과 공고번호는 필수입니다', 'error'); return; }
 
-  const base    = graw('f_base');
-  const net     = graw('f_net');
-  const a       = graw('f_a');
-  const lower   = parseFloat(document.getElementById('f_lower').value) || 87.745;
-  const adj     = parseFloat(gstr('f_adjust')) || 100;
-  const actual  = graw('f_actual');
-  const limit98 = net * 0.98;
-  const raw     = ((base - a) * (lower/100) * (adj/100)) + a;
-  const final   = Math.max(raw, limit98);
-  const ar      = (base && actual) ? actual/base*100 : 0;
-
+  const base   = graw('f_base');
+  const net    = graw('f_net');
+  const a      = graw('f_a');
+  const lower  = parseFloat(document.getElementById('f_lower').value) || 87.745;
+  const adj    = parseFloat(gstr('f_adjust')) || 100;
+  const actual = graw('f_actual');
+  const limitOn= document.getElementById('r_limit_on')?.checked ?? false;
+  const limit98= net * 0.98;
+  const raw    = ((base - a) * (lower/100) * (adj/100)) + a;
+  const final  = limitOn ? Math.max(raw, limit98) : raw;
+  const ar     = (base && actual) ? actual/base*100 : 0;
   const existing = records.find(r => r.notice === notice);
   const status   = existing?.status || '보통';
 
   const data = {
     client: gstr('f_client'), project, notice,
-    end1:   normalizeDate(gstr('f_end1')),   start2: normalizeDate(gstr('f_start2')),
+    end1:   normalizeDate(gstr('f_end1')),
+    start2: normalizeDate(gstr('f_start2')),
     base, net_cost: net, a_value: a,
     adjust_rate: adj, lower_rate: lower,
     final_bid: Math.round(final),
@@ -1131,10 +1321,10 @@ window.saveRecord = async function() {
     is_completed: actual > 0,
     result_reason: gstr('f_result_reason'),
     real_base: graw('f_real_base') || null,
-    reserve_range: document.querySelector('input[name="r_reserve"]:checked')?.value || '3',
     real_net:  graw('f_real_net')  || null,
     real_bid:  graw('f_real_bid')  || null,
-    limit_applied: document.getElementById('r_limit_on')?.checked ?? false,
+    reserve_range: document.querySelector('input[name="r_reserve"]:checked')?.value || '3',
+    limit_applied: limitOn,
     status,
     updated_at: new Date().toISOString(),
   };
@@ -1158,9 +1348,7 @@ window.toggleBid = async function() {
   try {
     await setDoc(doc(db, COL, r.notice), { ...r, status: newStatus });
     toast(newStatus === '투찰' ? '투찰 완료로 표시했습니다' : '투찰 표시를 해제했습니다', 'success');
-  } catch(e) {
-    toast(`오류: ${e.message}`, 'error');
-  }
+  } catch(e) { toast(`오류: ${e.message}`, 'error'); }
 };
 
 // ── 삭제 ─────────────────────────────────────
@@ -1169,19 +1357,16 @@ window.deleteRecord = function() {
   const r = records.find(r => r.notice === selectedNotice);
   deleteTarget = selectedNotice;
   document.getElementById('deleteMsg').innerHTML =
-    `다음 항목을 삭제하시겠습니까?<br><br><span class="confirm-project">${r?.project || selectedNotice}</span>`;
+    `다음 항목을 삭제하시겠습니까?<br><br><span class="confirm-project">${r?.project||selectedNotice}</span>`;
   openModal('deleteOverlay');
 };
-
 window.confirmDelete = async function() {
   closeModal('deleteOverlay');
   try {
     await deleteDoc(doc(db, COL, deleteTarget));
     toast('삭제되었습니다', 'success');
     clearForm();
-  } catch(e) {
-    toast(`삭제 실패: ${e.message}`, 'error');
-  }
+  } catch(e) { toast(`삭제 실패: ${e.message}`, 'error'); }
 };
 
 // ── 필터 ─────────────────────────────────────
@@ -1195,200 +1380,135 @@ window.setFilter = function(mode) {
   renderList();
 };
 
-// ── 탭 전환 ──────────────────────────────────
-window.switchTab = function(tab) {
-  const mainBody  = document.querySelector('.body');
-  const guidePage = document.getElementById('guidePage');
-  const statsPage = document.getElementById('statsPage');
-  const tabs      = document.querySelectorAll('.header-tab');
-
-  // 모두 숨기기
-  mainBody.style.display = 'none';
-  guidePage.classList.remove('show');
-  statsPage.classList.remove('show');
-  tabs.forEach(t => t.classList.remove('active'));
-
-  if (tab === 'guide') {
-    guidePage.classList.add('show');
-    tabs[2].classList.add('active');
-  } else if (tab === 'stats') {
-    statsPage.classList.add('show');
-    tabs[1].classList.add('active');
-    renderStats();
-  } else {
-    mainBody.style.display = '';
-    tabs[0].classList.add('active');
-  }
+// ── 목록 팝업 ────────────────────────────────
+window.openListModal = function() {
+  renderList();
+  openModal('listOverlay');
 };
 
-// ── 현황 분석 ────────────────────────────────
+// ── 현황 분석 팝업 ────────────────────────────
+window.openStatsModal = function() {
+  renderStats();
+  openModal('statsOverlay');
+};
+
 function calcStddev(rates) {
   if (rates.length < 2) return null;
-  const avg = rates.reduce((a,b) => a+b, 0) / rates.length;
-  const variance = rates.reduce((s,v) => s + Math.pow(v-avg, 2), 0) / (rates.length - 1);
+  const avg = rates.reduce((a,b)=>a+b,0) / rates.length;
+  const variance = rates.reduce((s,v) => s + Math.pow(v-avg,2), 0) / (rates.length-1);
   return Math.sqrt(variance);
 }
 
 function renderStats() {
   const completed = records.filter(r => r.is_completed);
   const total     = completed.length;
-    const won       = completed.filter(r => r.result_reason === '낙찰').length;
+  const won       = completed.filter(r => r.result_reason === '낙찰').length;
   const lost      = total - won;
 
-  // 요약 카드 (3개)
   document.getElementById('statsSummary').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-card-num" style="color:var(--fg)">${total}</div>
-      <div class="stat-card-lbl">전체 개찰</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-num" style="color:var(--green)">${won}</div>
-      <div class="stat-card-lbl">낙찰</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-num" style="color:var(--red)">${lost}</div>
-      <div class="stat-card-lbl">탈락</div>
-    </div>`;
+    <div class="stat-card"><div class="stat-card-num" style="color:var(--fg)">${total}</div><div class="stat-card-lbl">전체 개찰</div></div>
+    <div class="stat-card"><div class="stat-card-num" style="color:var(--green)">${won}</div><div class="stat-card-lbl">낙찰</div></div>
+    <div class="stat-card"><div class="stat-card-num" style="color:var(--red)">${lost}</div><div class="stat-card-lbl">탈락</div></div>`;
 
-  // 탈락사유별 (드릴다운)
   const reasonMap = {};
   completed.forEach(r => {
     const reason = r.result_reason || '미입력';
     if (!reasonMap[reason]) reasonMap[reason] = [];
     reasonMap[reason].push(r);
   });
-  const reasonColors = {
-    '낙찰':             'var(--green)',
-    '정상':             'var(--blue)',
-    '낙찰하한선 미달':   'var(--amber)',
-    '순공사원가 98%미만':'var(--red)',
-    '미입력':           'var(--gray)',
-  };
-  const reasonWrap = document.getElementById('statsReasonWrap');
+  const reasonColors = { '낙찰':'var(--green)', '정상':'var(--blue)', '낙찰하한선 미달':'var(--amber)', '순공사원가 98%미만':'var(--red)', '미입력':'var(--gray)' };
   document.getElementById('statsReasonDetail').style.display = 'none';
-
-  reasonWrap.innerHTML = Object.entries(reasonMap)
+  document.getElementById('statsReasonWrap').innerHTML = Object.entries(reasonMap)
     .sort((a,b) => b[1].length - a[1].length)
     .map(([reason, recs]) => {
-      const cnt   = recs.length;
-      const pct   = total > 0 ? (cnt/total*100).toFixed(1) : 0;
+      const pct   = total > 0 ? (recs.length/total*100).toFixed(1) : 0;
       const color = reasonColors[reason] || 'var(--blue)';
-      return `
-        <div class="reason-bar-wrap" onclick="showReasonDetail('${reason}')"
-             style="cursor:pointer; padding:6px; border-radius:4px; transition:background 0.15s;"
-             onmouseover="this.style.background='var(--blue-lt)'"
-             onmouseout="this.style.background='transparent'">
-          <div class="reason-bar-label">
-            <span style="font-weight:500;">${reason}</span>
-            <span style="font-family:var(--mono); color:var(--fg-dim)">${cnt}건 (${pct}%) ▸</span>
-          </div>
-          <div class="reason-bar-bg">
-            <div class="reason-bar-fill" style="width:${pct}%; background:${color};"></div>
-          </div>
-        </div>`;
-    }).join('') || '<div style="color:var(--fg-muted); font-size:12px; padding:12px 0;">개찰 완료된 데이터가 없습니다</div>';
+      return `<div class="reason-bar-wrap" onclick="showReasonDetail('${reason}')">
+        <div class="reason-bar-label"><span style="font-weight:500;">${reason}</span><span style="font-family:var(--mono); color:var(--fg-dim)">${recs.length}건 (${pct}%) ▸</span></div>
+        <div class="reason-bar-bg"><div class="reason-bar-fill" style="width:${pct}%; background:${color};"></div></div>
+      </div>`;
+    }).join('') || '<div style="color:var(--fg-muted); font-size:12px; padding:12px 0;">데이터 없음</div>';
 
-  // 발주처별
   const clientMap = {};
   completed.forEach(r => {
     if (!clientMap[r.client]) clientMap[r.client] = [];
     clientMap[r.client].push(r);
   });
-  const clientBody = document.getElementById('statsClientBody');
-  clientBody.innerHTML = Object.entries(clientMap)
+  document.getElementById('statsClientBody').innerHTML = Object.entries(clientMap)
     .sort((a,b) => b[1].length - a[1].length)
     .map(([client, recs]) => {
       const cWon = recs.filter(r => r.result_reason === '낙찰').length;
-      const cLost = recs.length - cWon;
-      const effRates = recs.filter(r => r.result_reason !== '순공사원가 98%미만').map(r => {
-        const base=r.base||0, a=r.a_value||0, lower=r.lower_rate||87.745, actual=r.actual_result||0;
-        const denom = base - a;
-        if (denom <= 0) return null;
-        return ((actual - a) / denom) / (lower/100) * 100;
-      }).filter(v => v !== null);
+      const effRates = recs.filter(r => r.result_reason !== '순공사원가 98%미만')
+        .map(r => calcEffAdj(r)).filter(v => v !== null);
       const avg = effRates.length ? effRates.reduce((a,b)=>a+b,0)/effRates.length : null;
       const std = calcStddev(effRates);
       return `<tr>
         <td>${client}</td>
         <td style="text-align:center; font-family:var(--mono)">${recs.length}</td>
         <td style="text-align:center; font-family:var(--mono); color:var(--green)">${cWon}</td>
-        <td style="text-align:center; font-family:var(--mono); color:var(--red)">${cLost}</td>
+        <td style="text-align:center; font-family:var(--mono); color:var(--red)">${recs.length-cWon}</td>
         <td style="text-align:center; font-family:var(--mono); color:var(--blue)">${avg ? avg.toFixed(4)+'%' : '-'}</td>
         <td style="text-align:center; font-family:var(--mono); color:var(--amber)">${std ? '±'+std.toFixed(4)+'%' : effRates.length < 2 ? '부족' : '-'}</td>
       </tr>`;
-    }).join('') || '<tr><td colspan="6" style="text-align:center; color:var(--fg-muted); padding:24px;">데이터 없음</td></tr>';
+    }).join('') || '<tr><td colspan="6" style="text-align:center; color:var(--fg-muted); padding:20px;">데이터 없음</td></tr>';
 }
 
 window.showReasonDetail = function(reason) {
   const completed = records.filter(r => r.is_completed);
   const filtered  = completed.filter(r => (r.result_reason || '미입력') === reason);
-  const detail    = document.getElementById('statsReasonDetail');
-  const title     = document.getElementById('statsReasonDetailTitle');
-  const tbody     = document.getElementById('statsReasonDetailBody');
-
-  title.textContent = `${reason}  —  ${filtered.length}건`;
-  tbody.innerHTML = filtered
+  document.getElementById('statsReasonDetailTitle').textContent = `${reason}  —  ${filtered.length}건`;
+  document.getElementById('statsReasonDetailBody').innerHTML = filtered
     .sort((a,b) => (b.end1||'').localeCompare(a.end1||''))
     .map(r => `<tr>
       <td style="font-family:var(--mono)">${(r.end1||'').slice(0,10)}</td>
       <td>${r.client||''}</td>
       <td>${r.project||''}</td>
       <td style="text-align:right; font-family:var(--mono)">${r.final_bid ? r.final_bid.toLocaleString('ko-KR') : '-'}</td>
-    </tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--fg-muted); padding:16px;">데이터 없음</td></tr>';
-
-  detail.style.display = 'block';
-  detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    </tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--fg-muted); padding:14px;">데이터 없음</td></tr>';
+  document.getElementById('statsReasonDetail').style.display = 'block';
 };
 
 // ── 달력 ─────────────────────────────────────
-window.openCalendar = function() {
+window.openCalModal = function() {
   calYear  = new Date().getFullYear();
   calMonth = new Date().getMonth();
   renderCalendar();
   openModal('calOverlay');
 };
-
 window.changeMonth = function(dir) {
   calMonth += dir;
   if (calMonth > 11) { calMonth = 0; calYear++; }
   if (calMonth < 0)  { calMonth = 11; calYear--; }
   renderCalendar();
 };
-
 function renderCalendar() {
   const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
   document.getElementById('calTitle').textContent = `${calYear}년 ${monthNames[calMonth]}`;
-
   const today    = new Date();
   const firstDay = new Date(calYear, calMonth, 1).getDay();
   const lastDate = new Date(calYear, calMonth + 1, 0).getDate();
-
-  const activeRecords = records.filter(r => !r.is_completed);
-  const byDate = {};
-  activeRecords.forEach(r => {
+  const active   = records.filter(r => !r.is_completed);
+  const byDate   = {};
+  active.forEach(r => {
     if (!r.start2) return;
     const d = r.start2.slice(0, 10);
     if (!byDate[d]) byDate[d] = [];
     byDate[d].push(r);
   });
-
   const grid = document.getElementById('calGrid');
   grid.innerHTML = '';
-
-  const prevLastDate = new Date(calYear, calMonth, 0).getDate();
+  const prevLast = new Date(calYear, calMonth, 0).getDate();
   for (let i = firstDay - 1; i >= 0; i--) {
     const cell = document.createElement('div');
     cell.className = 'cal-cell other-month';
-    cell.innerHTML = `<div class="cal-day">${prevLastDate - i}</div>`;
+    cell.innerHTML = `<div class="cal-day">${prevLast - i}</div>`;
     grid.appendChild(cell);
   }
-
   for (let d = 1; d <= lastDate; d++) {
     const cell    = document.createElement('div');
     const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
     cell.className = 'cal-cell' + (isToday ? ' today' : '');
-
     let html = `<div class="cal-day">${d}</div>`;
     if (byDate[dateStr]) {
       byDate[dateStr].forEach(r => {
@@ -1400,147 +1520,120 @@ function renderCalendar() {
     cell.innerHTML = html;
     grid.appendChild(cell);
   }
-
-  const totalCells = firstDay + lastDate;
-  const remaining  = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
-  for (let d = 1; d <= remaining; d++) {
-    const cell = document.createElement('div');
-    cell.className = 'cal-cell other-month';
-    cell.innerHTML = `<div class="cal-day">${d}</div>`;
-    grid.appendChild(cell);
+  const remaining = (firstDay + lastDate) % 7;
+  if (remaining > 0) {
+    for (let d = 1; d <= 7 - remaining; d++) {
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell other-month';
+      cell.innerHTML = `<div class="cal-day">${d}</div>`;
+      grid.appendChild(cell);
+    }
   }
 }
-
 window.selectFromCal = function(notice) {
   const r = records.find(r => r.notice === notice);
   if (!r) return;
   closeModal('calOverlay');
-  setTimeout(() => {
-    selectedNotice = notice;
-    setFilter(r.status === '투찰' ? 2 : 1);
-    selectItem(r);
-  }, 150);
+  setTimeout(() => { selectedNotice = notice; selectItem(r); }, 150);
+};
+
+// ── 계산식 안내 팝업 ──────────────────────────
+window.openGuideModal = function() { openModal('guideOverlay'); };
+
+// ── 입찰가 결정 과정 팝업 ────────────────────
+window.openProcessModal = function() {
+  const base  = graw('f_base');
+  const a     = graw('f_a');
+  const lower = parseFloat(document.getElementById('f_lower').value) || 87.745;
+  const adj   = parseFloat(gstr('f_adjust')) || 100;
+  const step1 = base * (adj/100);
+  const step2 = step1 - a;
+  const step3 = step2 * (lower/100);
+  const step4 = step3 + a;
+
+  document.getElementById('processBody').innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="padding:14px; background:var(--surface); border-radius:8px;">
+        <strong>① 예상 낙찰기준</strong><br>
+        <small style="color:var(--fg-dim);">기초금액 × 분석 사정률<br>
+        <span style="color:var(--blue);">${fmt(base)} × ${adj}% = ${fmt(step1)} 원</span></small>
+      </div>
+      <div style="padding:14px; background:var(--surface); border-radius:8px;">
+        <strong>② A값 제외</strong><br>
+        <small style="color:var(--fg-dim);">①번에서 A값을 뺍니다.<br>
+        <span style="color:var(--blue);">${fmt(step1)} - ${fmt(a)} = ${fmt(step2)} 원</span></small>
+      </div>
+      <div style="padding:14px; background:var(--surface); border-radius:8px;">
+        <strong>③ 낙찰하한율 적용</strong><br>
+        <small style="color:var(--fg-dim);">②번 × 낙찰하한율<br>
+        <span style="color:var(--blue);">${fmt(step2)} × ${lower}% = ${fmt(step3)} 원</span></small>
+      </div>
+      <div style="padding:14px; background:var(--blue-lt); border-radius:8px; border:1px solid #BFDBFE;">
+        <strong>④ 최종 투찰금액</strong><br>
+        <small style="color:var(--fg-dim);">③번 + A값<br>
+        <span style="color:var(--blue); font-weight:700;">${fmt(step3)} + ${fmt(a)} = ${fmt(step4)} 원</span></small>
+      </div>
+    </div>`;
+  openModal('processOverlay');
 };
 
 // ── 발주처 이력 팝업 ──────────────────────────
 window.showHistory = function() {
   const client = gstr('f_client');
   if (!client) { toast('발주처를 먼저 입력하세요', 'error'); return; }
-  const completed = records.filter(r => r.client === client && r.is_completed
-    && r.result_reason !== '순공사원가 98%미만');  // 배제기준 케이스 제외
-  const rates     = completed.map(r => calcEffAdj(r)).filter(v => v !== null);
-  const avg       = rates.length ? rates.reduce((a,b)=>a+b,0)/rates.length : null;
-
-  document.getElementById('historyTitle').textContent = `${client}  낙찰 이력`;
-  // 표준편차 계산
-  let stddev = null;
+  const curReserve = document.querySelector('input[name="r_reserve"]:checked')?.value || '3';
+  const completed  = records.filter(r => r.client === client && r.is_completed
+    && r.result_reason !== '순공사원가 98%미만');
+  const useRecs = curReserve === '2'
+    ? completed.filter(r => (r.reserve_range||'3') === '2')
+    : completed;
+  const rates = useRecs.map(r => calcEffAdj(r)).filter(v => v !== null);
+  const avg   = rates.length ? rates.reduce((a,b)=>a+b,0)/rates.length : null;
+  let stddev  = null;
   if (rates.length >= 2) {
-    const variance = rates.reduce((s, v) => s + Math.pow(v - avg, 2), 0) / (rates.length - 1);
+    const variance = rates.reduce((s,v) => s + Math.pow(v-avg,2), 0) / (rates.length-1);
     stddev = Math.sqrt(variance);
   }
-  const stdText = stddev !== null ? `  σ ${stddev.toFixed(4)}%` : (rates.length < 2 ? '  (데이터 부족)' : '');
-  document.getElementById('historyAvg').textContent = avg
-    ? `평균 ${avg.toFixed(4)}%${stdText}  (${rates.length}건)`
-    : '';
+  const stdText = stddev !== null ? `  σ ${stddev.toFixed(4)}%` : rates.length < 2 ? '  (데이터 부족)' : '';
 
-  const tbody = document.getElementById('historyBody');
-  const rows  = completed.map(r => ({ r, eff: calcEffAdj(r) })).filter(x => x.eff !== null);
-  tbody.innerHTML = rows.length
+  document.getElementById('historyTitle').textContent = `${client}  낙찰 이력 (±${curReserve}%)`;
+  document.getElementById('historyAvg').textContent   = avg
+    ? `평균 ${avg.toFixed(4)}%${stdText}  (${rates.length}건)`  : '';
+
+  const rows = useRecs.map(r => ({ r, eff: calcEffAdj(r) })).filter(x => x.eff !== null);
+  document.getElementById('historyBody').innerHTML = rows.length
     ? rows.map(({r, eff}) => `
         <tr>
           <td>${(r.start2||'').slice(0,10)}</td>
           <td>${r.project||''}</td>
-          <td style="text-align:center; font-family:var(--mono); color:var(--blue);">±${r.reserve_range||'3'}%</td>
+          <td style="text-align:center; color:var(--blue);">±${r.reserve_range||'3'}%</td>
           <td class="td-rate">${eff.toFixed(4)}% ${r.real_base ? '<span style="font-size:9px;color:var(--blue);">실측</span>' : ''}</td>
         </tr>`).join('')
-    : `<tr><td colspan="3" style="text-align:center;color:var(--fg-muted);padding:24px;">데이터 없음</td></tr>`;
+    : `<tr><td colspan="4" style="text-align:center; color:var(--fg-muted); padding:20px;">데이터 없음</td></tr>`;
 
   openModal('historyOverlay');
 };
 
-// ── 수익성 카드 ──────────────────────────────
-function updateProfitCard(base, net) {
-  const card  = document.getElementById('profitCard');
-  const label = document.getElementById('profitLabel');
-  const rate  = document.getElementById('profitRate');
-  const msg   = document.getElementById('profitMsg');
-
-  if (!base || !net) {
-    card.className = 'profit-card idle';
-    label.textContent = '수익성 분석';
-    rate.textContent  = '—';
-    msg.textContent   = '기초금액과 순공사원가를 입력하세요';
-    return;
-  }
-
-  const ratio = (net / base) * 100;
-  rate.textContent = ratio.toFixed(2) + '%';
-
-  if (ratio <= 90) {
-    card.className    = 'profit-card safe';
-    label.textContent = '✅ 수익성 안정권';
-    msg.textContent   = `순공사원가 비율 ${ratio.toFixed(2)}% — 배제기준 여유 있음, 투찰 유리`;
-  } else if (ratio <= 92) {
-    card.className    = 'profit-card warning';
-    label.textContent = '⚠️ 수익성 주의 구간';
-    msg.textContent   = `순공사원가 비율 ${ratio.toFixed(2)}% — 배제기준 근접, 신중한 투찰 필요`;
-  } else {
-    card.className    = 'profit-card danger';
-    label.textContent = '🚨 수익성 위험 — 입찰 재고 권장';
-    msg.textContent   = `순공사원가 비율 ${ratio.toFixed(2)}% — 배제기준이 낙찰하한율 초과 가능, 손실 위험`;
-  }
-}
-
 // ── 감 vs 통계 대결 ──────────────────────────
 window.updateBidDiff = function() {
   const actual  = graw('f_actual');
-  const recVal  = parseFloat((document.getElementById('f_rec').value||'').replace(/[^0-9]/g,'')) || 0;
+  const recStr  = (document.getElementById('f_rec').value||'').replace(/[^0-9]/g,'');
+  const recVal  = parseFloat(recStr) || 0;
   const realBid = graw('f_real_bid');
   const wrap    = document.getElementById('bidDiffWrap');
-
   if (!actual || !realBid) { wrap.style.display = 'none'; return; }
-
   wrap.style.display = 'block';
   const diffRec  = Math.abs(actual - recVal);
   const diffReal = Math.abs(actual - realBid);
-
   const recColor  = diffRec  <= diffReal ? 'var(--green)' : 'var(--red)';
   const realColor = diffReal <= diffRec  ? 'var(--green)' : 'var(--red)';
-
-  document.getElementById('bidDiffRec').innerHTML =
-    `<span style="color:var(--fg-dim)">추천: </span><span style="color:${recColor}">${fmt(recVal)}  (차이 ${fmt(diffRec)})</span>`;
-  document.getElementById('bidDiffReal').innerHTML =
-    `<span style="color:var(--fg-dim)">실제투찰: </span><span style="color:${realColor}">${fmt(realBid)}  (차이 ${fmt(diffReal)})</span>`;
-
-  const winnerEl = document.getElementById('bidDiffWinner');
-  if (diffRec < diffReal) {
-    winnerEl.innerHTML = '🏆 통계 승!';
-    winnerEl.style.color = 'var(--blue)';
-  } else if (diffReal < diffRec) {
-    winnerEl.innerHTML = '🏆 감 승!';
-    winnerEl.style.color = 'var(--amber)';
-  } else {
-    winnerEl.innerHTML = '🤝 무승부!';
-    winnerEl.style.color = 'var(--fg-dim)';
-  }
+  document.getElementById('bidDiffRec').innerHTML  = `<span style="color:var(--fg-dim)">추천: </span><span style="color:${recColor}">${fmt(recVal)} (차이 ${fmt(diffRec)})</span>`;
+  document.getElementById('bidDiffReal').innerHTML = `<span style="color:var(--fg-dim)">실제투찰: </span><span style="color:${realColor}">${fmt(realBid)} (차이 ${fmt(diffReal)})</span>`;
+  const winEl = document.getElementById('bidDiffWinner');
+  if (diffRec < diffReal)       { winEl.innerHTML = '🏆 통계 승!'; winEl.style.color = 'var(--blue)'; }
+  else if (diffReal < diffRec)  { winEl.innerHTML = '🏆 감 승!';   winEl.style.color = 'var(--amber)'; }
+  else                          { winEl.innerHTML = '🤝 무승부!';  winEl.style.color = 'var(--fg-dim)'; }
 };
-
-// ── 탈락사유 드롭다운 ────────────────────────
-window.toggleReasonList = function() {
-  const list = document.getElementById('reasonList');
-  list.style.display = list.style.display === 'none' ? 'block' : 'none';
-};
-window.pickReason = function(val) {
-  document.getElementById('f_result_reason').value = val;
-  document.getElementById('reasonList').style.display = 'none';
-};
-document.addEventListener('click', e => {
-  if (!e.target.closest('#f_result_reason') && !e.target.closest('#reasonList') &&
-      !e.target.closest('button[onclick="toggleReasonList()"]')) {
-    const list = document.getElementById('reasonList');
-    if (list) list.style.display = 'none';
-  }
-});
 
 // ── 낙찰하한율 드롭다운 ──────────────────────
 window.toggleLowerList = function() {
@@ -1552,12 +1645,23 @@ window.pickLower = function(val) {
   document.getElementById('lowerList').style.display = 'none';
   doCalc();
 };
-// 외부 클릭 시 닫기
+
+// ── 탈락사유 드롭다운 ────────────────────────
+window.toggleReasonList = function() {
+  const list = document.getElementById('reasonList');
+  list.style.display = list.style.display === 'none' ? 'block' : 'none';
+};
+window.pickReason = function(val) {
+  document.getElementById('f_result_reason').value = val;
+  document.getElementById('reasonList').style.display = 'none';
+};
+
+// 외부 클릭 시 드롭다운 닫기
 document.addEventListener('click', e => {
-  if (!e.target.closest('#f_lower') && !e.target.closest('#lowerList') && !e.target.closest('button[onclick="toggleLowerList()"]')) {
-    const list = document.getElementById('lowerList');
-    if (list) list.style.display = 'none';
-  }
+  if (!e.target.closest('#f_lower') && !e.target.closest('#lowerList') && !e.target.closest('button[onclick="toggleLowerList()"]'))
+    document.getElementById('lowerList').style.display = 'none';
+  if (!e.target.closest('#f_result_reason') && !e.target.closest('#reasonList') && !e.target.closest('button[onclick="toggleReasonList()"]'))
+    document.getElementById('reasonList').style.display = 'none';
 });
 
 // ── 모달 ─────────────────────────────────────
