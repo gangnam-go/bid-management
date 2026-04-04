@@ -442,9 +442,62 @@ body {
 /* ── 결과분석 배지 ── */
 .net98-badge { font-size: 11px; color: var(--red); font-family: var(--mono); padding: 4px 10px; background: var(--red-lt); border-radius: 4px; white-space: nowrap; }
 .act-msg { font-size: 12px; font-weight: 700; margin-top: 6px; }
+
+/* ── 로그인 화면 ── */
+#loginScreen {
+  display: none; position: fixed; inset: 0;
+  background: var(--bg); z-index: 200;
+  align-items: center; justify-content: center;
+}
+#loginScreen.show { display: flex; }
+.login-box {
+  background: var(--panel); border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  padding: 40px 44px; width: 380px;
+  display: flex; flex-direction: column; gap: 20px;
+}
+.login-logo { font-size: 18px; font-weight: 800; color: var(--blue); letter-spacing: -0.3px; text-align: center; }
+.login-logo span { font-weight: 300; font-size: 12px; color: var(--fg-muted); display: block; margin-top: 4px; }
+.login-field { display: flex; flex-direction: column; gap: 6px; }
+.login-field label { font-size: 12px; font-weight: 600; color: var(--fg-dim); }
+.login-field input {
+  padding: 10px 12px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 13px; font-family: var(--mono);
+  background: var(--surface); color: var(--fg); outline: none;
+  transition: border-color var(--tr);
+}
+.login-field input:focus { border-color: var(--blue); background: #fff; }
+.login-btn {
+  padding: 11px; background: var(--blue); color: #fff;
+  border: none; border-radius: 8px; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: background var(--tr);
+}
+.login-btn:hover { background: var(--blue-d); }
+.login-error { font-size: 12px; color: var(--red); text-align: center; min-height: 16px; }
 </style>
 </head>
 <body>
+
+<!-- ── 로그인 화면 ── -->
+<div id="loginScreen" class="show">
+  <div class="login-box">
+    <div class="login-logo">
+      BIDDING STRATEGY
+      <span>입찰 관리 시스템</span>
+    </div>
+    <div class="login-field">
+      <label>이메일</label>
+      <input type="email" id="loginEmail" placeholder="이메일 입력" autocomplete="email">
+    </div>
+    <div class="login-field">
+      <label>비밀번호</label>
+      <input type="password" id="loginPw" placeholder="비밀번호 입력" autocomplete="current-password">
+    </div>
+    <div class="login-error" id="loginError"></div>
+    <button class="login-btn" id="loginBtn">로그인</button>
+  </div>
+</div>
 
 <!-- ── 네비바 ── -->
 <nav class="navbar">
@@ -459,6 +512,8 @@ body {
     <button class="nav-btn" onclick="openCalModal()">📅 달력</button>
     <button class="nav-btn" onclick="openGuideModal()">📖 계산식 안내</button>
     <span class="nav-date" id="headerDate"></span>
+    <span style="font-size:11px; opacity:0.7; font-family:var(--mono);" id="navUserEmail"></span>
+    <button class="nav-btn" id="logoutBtn" style="background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.3);" onclick="doLogout()">로그아웃</button>
   </div>
 </nav>
 
@@ -901,6 +956,8 @@ body {
 import { initializeApp }                          from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, doc, setDoc,
          deleteDoc, onSnapshot, query, orderBy }  from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword,
+         signOut, onAuthStateChanged }            from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyAKrG9Hp2KDt0bl_XXKcxWUfWzcCJ7_99M",
@@ -911,9 +968,10 @@ const firebaseConfig = {
   appId:             "1:346439905435:web:5eb15f42bd5b61cc57563e"
 };
 
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
-const COL = "bids";
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+const COL  = "bids";
 
 // ── 전역 상태 ──────────────────────────────────
 let records        = [];
@@ -929,17 +987,65 @@ let deleteTarget   = null;
 document.getElementById('headerDate').textContent =
   new Date().toLocaleDateString('ko-KR', {year:'numeric', month:'2-digit', day:'2-digit'});
 
-const q = query(collection(db, COL), orderBy("end1", "desc"));
-onSnapshot(q, snap => {
-  records = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  document.getElementById('dbDot').style.background = '#4ADE80';
-  document.getElementById('dbStatus').textContent   = 'Firestore 연결됨';
-  renderList();
-}, err => {
-  document.getElementById('dbDot').style.background = '#FCA5A5';
-  document.getElementById('dbStatus').textContent   = '연결 오류';
-  console.error(err);
+// ── Auth 상태 감시 ────────────────────────────
+let unsubscribeSnapshot = null;
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    // 로그인 됨 → 앱 화면 표시
+    document.getElementById('loginScreen').classList.remove('show');
+    document.getElementById('navUserEmail').textContent = user.email;
+    // Firestore 연결
+    const q = query(collection(db, COL), orderBy("end1", "desc"));
+    unsubscribeSnapshot = onSnapshot(q, snap => {
+      records = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      document.getElementById('dbDot').style.background = '#4ADE80';
+      document.getElementById('dbStatus').textContent   = 'Firestore 연결됨';
+      renderList();
+    }, err => {
+      document.getElementById('dbDot').style.background = '#FCA5A5';
+      document.getElementById('dbStatus').textContent   = '연결 오류';
+      console.error(err);
+    });
+  } else {
+    // 로그아웃 → 로그인 화면 표시
+    document.getElementById('loginScreen').classList.add('show');
+    document.getElementById('navUserEmail').textContent = '';
+    records = [];
+    if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+  }
 });
+
+// ── 로그인 처리 ───────────────────────────────
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('loginPw').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pw    = document.getElementById('loginPw').value;
+  const errEl = document.getElementById('loginError');
+  const btn   = document.getElementById('loginBtn');
+  if (!email || !pw) { errEl.textContent = '이메일과 비밀번호를 입력하세요'; return; }
+  btn.textContent = '로그인 중...';
+  btn.disabled = true;
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    errEl.textContent = '';
+    document.getElementById('loginPw').value = '';
+  } catch(e) {
+    errEl.textContent = '이메일 또는 비밀번호가 올바르지 않습니다';
+  } finally {
+    btn.textContent = '로그인';
+    btn.disabled = false;
+  }
+}
+
+// ── 로그아웃 처리 ─────────────────────────────
+window.doLogout = async function() {
+  await signOut(auth);
+};
 
 // ── 날짜 정규화 ──────────────────────────────
 function normalizeDate(str) {
