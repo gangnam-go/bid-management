@@ -445,6 +445,33 @@ body {
 .reason-bar-label { display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:var(--fg); }
 .reason-bar-bg { background: var(--gray-lt); border-radius: 4px; height: 10px; overflow: hidden; }
 .reason-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+.profit-card {
+  margin: 10px 14px 0;
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+.profit-card.safe    { background: #F0FDF4; border-color: #86EFAC; }
+.profit-card.warning { background: #FFFBEB; border-color: #FCD34D; }
+.profit-card.danger  { background: #FEF2F2; border-color: #FCA5A5; }
+.profit-card.idle    { background: var(--surface); border-color: var(--border); }
+.profit-card-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+.profit-card-label { font-size:10px; font-weight:600; letter-spacing:0.06em; }
+.profit-card.safe    .profit-card-label { color: #16A34A; }
+.profit-card.warning .profit-card-label { color: #D97706; }
+.profit-card.danger  .profit-card-label { color: var(--red); }
+.profit-card.idle    .profit-card-label { color: var(--fg-muted); }
+.profit-card-rate { font-family:var(--mono); font-size:22px; font-weight:700; }
+.profit-card.safe    .profit-card-rate { color: #16A34A; }
+.profit-card.warning .profit-card-rate { color: #D97706; }
+.profit-card.danger  .profit-card-rate { color: var(--red); }
+.profit-card.idle    .profit-card-rate { color: var(--fg-muted); }
+.profit-card-msg { font-size:11px; margin-top:2px; }
+.profit-card.safe    .profit-card-msg { color: #15803D; }
+.profit-card.warning .profit-card-msg { color: #92400E; }
+.profit-card.danger  .profit-card-msg { color: #991B1B; }
+.profit-card.idle    .profit-card-msg { color: var(--fg-muted); }
 .confirm-msg { font-size:13px; line-height:1.7; color:var(--fg); }
 .confirm-project { font-family:var(--mono); color:var(--blue); font-weight:600; }
 </style>
@@ -486,7 +513,16 @@ body {
       </div>
     </div>
 
-    <!-- 입력 폼 -->
+    <!-- 수익성 카드 -->
+    <div class="profit-card idle" id="profitCard">
+      <div class="profit-card-top">
+        <span class="profit-card-label" id="profitLabel">수익성 분석</span>
+        <span class="profit-card-rate" id="profitRate">—</span>
+      </div>
+      <div class="profit-card-msg" id="profitMsg">기초금액과 순공사원가를 입력하세요</div>
+    </div>
+
+    <!-- 예비가격범위 + 입력 폼 -->
     <div class="section-hd">입찰 정보 입력</div>
     <div class="form-scroll">
       <div class="field"><span class="field-label">발주처</span><input class="field-input" id="f_client" placeholder="발주처명" oninput="onClientInput()"></div>
@@ -510,6 +546,17 @@ body {
         </div>
       </div>
       <div class="field-sub" id="lbl98">배제기준(98%): —</div>
+      <div class="field">
+        <span class="field-label">예비가격범위</span>
+        <div style="display:flex; align-items:center; gap:12px; padding:0 10px;">
+          <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-family:var(--mono); font-size:12px;">
+            <input type="radio" name="r_reserve" id="r_reserve_2" value="2" onchange="debounceCalc()" style="cursor:pointer;"> ±2%
+          </label>
+          <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-family:var(--mono); font-size:12px;">
+            <input type="radio" name="r_reserve" id="r_reserve_3" value="3" checked onchange="debounceCalc()" style="cursor:pointer;"> ±3%
+          </label>
+        </div>
+      </div>
       <div class="field">
         <span class="field-label">낙찰하한율(%)</span>
         <div style="position:relative; display:flex; align-items:center; width:100%;">
@@ -745,7 +792,7 @@ body {
     </div>
     <div class="modal-body">
       <table class="data-table">
-        <thead><tr><th>날짜</th><th>공사명</th><th>역산 사정률</th></tr></thead>
+        <thead><tr><th>날짜</th><th>공사명</th><th>범위</th><th>역산 사정률</th></tr></thead>
         <tbody id="historyBody"></tbody>
       </table>
     </div>
@@ -914,6 +961,9 @@ function selectItem(r) {
   sf('f_result_reason', r.result_reason || '');
   smf('f_real_base', r.real_base || '');
   smf('f_real_net',  r.real_net  || '');
+  const reserve = r.reserve_range || '3';
+  document.getElementById('r_reserve_2').checked = reserve === '2';
+  document.getElementById('r_reserve_3').checked = reserve !== '2';
   smf('f_real_bid',  r.real_bid  || '');
   window._realBidSet = true;  // 기존 데이터는 자동입력 안 함
   updateBidDiff();
@@ -944,6 +994,9 @@ window.clearForm = function() {
   document.getElementById('f_lower').value = '87.745';
   document.getElementById('r_limit_on').checked = false;
   document.getElementById('r_limit_off').checked = true;
+  document.getElementById('r_reserve_3').checked = true;
+  document.getElementById('r_reserve_2').checked = false;
+  updateProfitCard(0, 0);
   document.getElementById('lbl98').textContent = '배제기준(98%): —';
   document.getElementById('analysisResult').textContent = '발주처를 입력하세요';
   document.getElementById('analysisResult').className = 'analysis-value muted';
@@ -979,6 +1032,7 @@ function doCalc() {
   if (net > 0 && limitOn) lbl.textContent = `배제기준(98%): ${fmt(limit98)}`;
   else if (net > 0)       lbl.textContent = `배제기준(98%): 미적용`;
   else                    lbl.textContent = '배제기준(98%): —';
+  updateProfitCard(base, net);
 
   if (!base) { rec.value = ''; return; }
 
@@ -1010,17 +1064,25 @@ function analyzeClient(fillAdj = true) {
     el.className   = 'analysis-value muted';
     return;
   }
-  const completed = records.filter(r => r.client === client && r.is_completed
-    && r.result_reason !== '순공사원가 98%미만');  // 배제기준 케이스 제외
-  const rates     = completed.map(r => calcEffAdj(r)).filter(v => v !== null);
+  const curReserve = document.querySelector('input[name="r_reserve"]:checked')?.value || '3';
+  const completed  = records.filter(r => r.client === client && r.is_completed
+    && r.result_reason !== '순공사원가 98%미만');
+
+  // 예비가격범위 구분
+  const matched = completed.filter(r => (r.reserve_range || '3') === curReserve);
+  const allRecs = completed; // 전체 (±3%는 전체 포함)
+
+  const useRecs = curReserve === '2' ? matched : allRecs;
+  const rates   = useRecs.map(r => calcEffAdj(r)).filter(v => v !== null);
 
   if (!rates.length) {
-    el.textContent = `[${client}]  분석 데이터 없음`;
+    el.textContent = `[${client}]  분석 데이터 없음 (±${curReserve}% 기준)`;
     el.className   = 'analysis-value error';
     return;
   }
   const avg = rates.reduce((a,b)=>a+b,0) / rates.length;
-  el.textContent = `추천 사정률  ${avg.toFixed(4)}%   (${rates.length}건 평균)`;
+  const rangeText = curReserve === '2' ? ` ±2%` : ` ±3%포함`;
+  el.textContent = `추천 사정률  ${avg.toFixed(4)}%   (${rates.length}건${rangeText})`;
   el.className   = 'analysis-value';
   if (fillAdj) { sf('f_adjust', avg.toFixed(4)); doCalc(); }
 }
@@ -1069,6 +1131,7 @@ window.saveRecord = async function() {
     is_completed: actual > 0,
     result_reason: gstr('f_result_reason'),
     real_base: graw('f_real_base') || null,
+    reserve_range: document.querySelector('input[name="r_reserve"]:checked')?.value || '3',
     real_net:  graw('f_real_net')  || null,
     real_bid:  graw('f_real_bid')  || null,
     limit_applied: document.getElementById('r_limit_on')?.checked ?? false,
@@ -1387,12 +1450,46 @@ window.showHistory = function() {
         <tr>
           <td>${(r.start2||'').slice(0,10)}</td>
           <td>${r.project||''}</td>
+          <td style="text-align:center; font-family:var(--mono); color:var(--blue);">±${r.reserve_range||'3'}%</td>
           <td class="td-rate">${eff.toFixed(4)}% ${r.real_base ? '<span style="font-size:9px;color:var(--blue);">실측</span>' : ''}</td>
         </tr>`).join('')
     : `<tr><td colspan="3" style="text-align:center;color:var(--fg-muted);padding:24px;">데이터 없음</td></tr>`;
 
   openModal('historyOverlay');
 };
+
+// ── 수익성 카드 ──────────────────────────────
+function updateProfitCard(base, net) {
+  const card  = document.getElementById('profitCard');
+  const label = document.getElementById('profitLabel');
+  const rate  = document.getElementById('profitRate');
+  const msg   = document.getElementById('profitMsg');
+
+  if (!base || !net) {
+    card.className = 'profit-card idle';
+    label.textContent = '수익성 분석';
+    rate.textContent  = '—';
+    msg.textContent   = '기초금액과 순공사원가를 입력하세요';
+    return;
+  }
+
+  const ratio = (net / base) * 100;
+  rate.textContent = ratio.toFixed(2) + '%';
+
+  if (ratio <= 90) {
+    card.className    = 'profit-card safe';
+    label.textContent = '✅ 수익성 안정권';
+    msg.textContent   = `순공사원가 비율 ${ratio.toFixed(2)}% — 배제기준 여유 있음, 투찰 유리`;
+  } else if (ratio <= 92) {
+    card.className    = 'profit-card warning';
+    label.textContent = '⚠️ 수익성 주의 구간';
+    msg.textContent   = `순공사원가 비율 ${ratio.toFixed(2)}% — 배제기준 근접, 신중한 투찰 필요`;
+  } else {
+    card.className    = 'profit-card danger';
+    label.textContent = '🚨 수익성 위험 — 입찰 재고 권장';
+    msg.textContent   = `순공사원가 비율 ${ratio.toFixed(2)}% — 배제기준이 낙찰하한율 초과 가능, 손실 위험`;
+  }
+}
 
 // ── 감 vs 통계 대결 ──────────────────────────
 window.updateBidDiff = function() {
