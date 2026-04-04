@@ -582,6 +582,7 @@ body {
               <button onclick="toggleReasonList()" type="button" style="position:absolute; right:8px; background:none; border:none; color:var(--fg-muted); cursor:pointer; font-size:11px;">▼</button>
               <div id="reasonList" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--panel); border:1px solid var(--border2); border-radius:6px; box-shadow:var(--shadow-md); z-index:50; overflow:hidden; margin-top:2px;">
                 <div class="lower-opt" onclick="pickReason('낙찰')">🎉 낙찰</div>
+                <div class="lower-opt" onclick="pickReason('낙찰(배제기준 적용)')">🎉 낙찰 (배제기준 적용 — 사정률 무의미)</div>
                 <div class="lower-opt" onclick="pickReason('정상')">정상 (낙찰가보다 높음)</div>
                 <div class="lower-opt" onclick="pickReason('낙찰하한선 미달')">낙찰하한선 미달</div>
                 <div class="lower-opt" onclick="pickReason('순공사원가 98%미만')">순공사원가 98%미만</div>
@@ -1301,7 +1302,8 @@ function analyzeClient(fillAdj = true) {
   }
   const curReserve = document.querySelector('input[name="r_reserve"]:checked')?.value || '3';
   const completed  = records.filter(r => r.client === client && r.is_completed
-    && r.result_reason !== '순공사원가 98%미만');
+    && r.result_reason !== '순공사원가 98%미만'
+    && r.result_reason !== '낙찰(배제기준 적용)');
   const useRecs = curReserve === '2'
     ? completed.filter(r => (r.reserve_range||'3') === '2')
     : completed;
@@ -1459,7 +1461,7 @@ function renderStats() {
     if (!reasonMap[reason]) reasonMap[reason] = [];
     reasonMap[reason].push(r);
   });
-  const reasonColors = { '낙찰':'var(--green)', '정상':'var(--blue)', '낙찰하한선 미달':'var(--amber)', '순공사원가 98%미만':'var(--red)', '미입력':'var(--gray)' };
+  const reasonColors = { '낙찰':'var(--green)', '낙찰(배제기준 적용)':'#86EFAC', '정상':'var(--blue)', '낙찰하한선 미달':'var(--amber)', '순공사원가 98%미만':'var(--red)', '미입력':'var(--gray)' };
   document.getElementById('statsReasonDetail').style.display = 'none';
   document.getElementById('statsReasonWrap').innerHTML = Object.entries(reasonMap)
     .sort((a,b) => b[1].length - a[1].length)
@@ -1480,8 +1482,9 @@ function renderStats() {
   document.getElementById('statsClientBody').innerHTML = Object.entries(clientMap)
     .sort((a,b) => b[1].length - a[1].length)
     .map(([client, recs]) => {
-      const cWon = recs.filter(r => r.result_reason === '낙찰').length;
-      const effRates = recs.filter(r => r.result_reason !== '순공사원가 98%미만')
+      const cWon = recs.filter(r => r.result_reason === '낙찰' || r.result_reason === '낙찰(배제기준 적용)').length;
+      const effRates = recs.filter(r => r.result_reason !== '순공사원가 98%미만'
+        && r.result_reason !== '낙찰(배제기준 적용)')
         .map(r => calcEffAdj(r)).filter(v => v !== null);
       const avg = effRates.length ? effRates.reduce((a,b)=>a+b,0)/effRates.length : null;
       const std = calcStddev(effRates);
@@ -1682,7 +1685,8 @@ window.showHistory = function() {
   if (!client) { toast('발주처를 먼저 입력하세요', 'error'); return; }
   const curReserve = document.querySelector('input[name="r_reserve"]:checked')?.value || '3';
   const completed  = records.filter(r => r.client === client && r.is_completed
-    && r.result_reason !== '순공사원가 98%미만');
+    && r.result_reason !== '순공사원가 98%미만'
+    && r.result_reason !== '낙찰(배제기준 적용)');
   const useRecs = curReserve === '2'
     ? completed.filter(r => (r.reserve_range||'3') === '2')
     : completed;
