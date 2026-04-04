@@ -686,11 +686,11 @@ body {
       </div>
       <div class="card-body">
         <div class="sim-item">
-          <span class="sim-item-label">추천 투찰가</span>
+          <span class="sim-item-label">낙찰하한율 적용 투찰가</span>
           <span class="sim-item-value" id="res_rec">—</span>
         </div>
-        <div class="sim-item" style="color:var(--red-lt);">
-          <span class="sim-item-label" style="color:var(--red);">배제기준 (98%)</span>
+        <div class="sim-item">
+          <span class="sim-item-label" style="color:var(--red);">배제기준(98%) 적용가</span>
           <span class="sim-item-value" style="color:var(--red);" id="res_98">—</span>
         </div>
         <div class="sim-main">
@@ -1162,10 +1162,10 @@ function doCalc() {
   }
 
   // 시뮬레이션
-  document.getElementById('res_rec').textContent   = fmt(result) + ' 원';
-  document.getElementById('res_98').textContent    = net > 0 ? fmt(limit98) + ' 원' : '—';
+  document.getElementById('res_rec').textContent   = fmt(raw) + ' 원';
+  document.getElementById('res_98').textContent    = netEff > 0 && limitOn ? fmt(limit98) + ' 원' : '—';
   document.getElementById('res_final').textContent = fmt(result) + ' 원';
-  document.getElementById('res_status').textContent= capped ? '⚠ 배제기준 적용됨' : '사정률 기준';
+  document.getElementById('res_status').textContent= capped ? '△ 배제기준(98%) 적용' : '낙찰하한율 기준';
 
   // 실제 투찰금액 최초 1회 자동입력
   const realBidEl = document.getElementById('f_real_bid');
@@ -1594,29 +1594,85 @@ window.openProcessModal = function() {
   const step3 = step2 * (lower/100);
   const step4 = step3 + a;
 
-  document.getElementById('processBody').innerHTML = `
-    <div style="display:flex; flex-direction:column; gap:12px;">
-      <div style="padding:14px; background:var(--surface); border-radius:8px;">
-        <strong>① 예상 낙찰기준</strong><br>
-        <small style="color:var(--fg-dim);">기초금액 × 분석 사정률<br>
-        <span style="color:var(--blue);">${fmt(base)} × ${adj}% = ${fmt(step1)} 원</span></small>
-      </div>
-      <div style="padding:14px; background:var(--surface); border-radius:8px;">
-        <strong>② A값 제외</strong><br>
-        <small style="color:var(--fg-dim);">①번에서 A값을 뺍니다.<br>
-        <span style="color:var(--blue);">${fmt(step1)} - ${fmt(a)} = ${fmt(step2)} 원</span></small>
-      </div>
-      <div style="padding:14px; background:var(--surface); border-radius:8px;">
-        <strong>③ 낙찰하한율 적용</strong><br>
-        <small style="color:var(--fg-dim);">②번 × 낙찰하한율<br>
-        <span style="color:var(--blue);">${fmt(step2)} × ${lower}% = ${fmt(step3)} 원</span></small>
-      </div>
-      <div style="padding:14px; background:var(--blue-lt); border-radius:8px; border:1px solid #BFDBFE;">
-        <strong>④ 최종 투찰금액</strong><br>
-        <small style="color:var(--fg-dim);">③번 + A값<br>
-        <span style="color:var(--blue); font-weight:700;">${fmt(step3)} + ${fmt(a)} = ${fmt(step4)} 원</span></small>
-      </div>
-    </div>`;
+  const netVal  = graw('f_net');
+  const netEffP = (document.getElementById('r_net_y')?.checked && netVal > 0)
+    ? netVal : (base > 0 ? Math.ceil(base / 1.1) : 0);
+  const limit98P = (document.getElementById('r_net_y')?.checked && netVal > 0)
+    ? netEffP * 0.98
+    : (((base / 1.1) - a) * 0.98 + a) * 1.1;
+  const isCapped = step4 < limit98P && base > 0 && document.getElementById('r_limit_on')?.checked;
+  const finalAmt = isCapped ? limit98P : step4;
+
+  if (isCapped) {
+    // 배제기준 적용 시 — 배제기준 계산과정 표시
+    const netIsExplicit = document.getElementById('r_net_y')?.checked && netVal > 0;
+    const bStep1 = netIsExplicit ? netEffP : (base / 1.1);
+    const bStep2 = bStep1 - a;
+    const bStep3 = bStep2 * 0.98;
+    const bStep4 = bStep3 + a;
+    const bStep5 = netIsExplicit ? bStep3 : bStep4 * 1.1;
+
+    document.getElementById('processBody').innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="padding:10px 14px; background:#FEF2F2; border-radius:6px; border:1px solid #FCA5A5;">
+          <strong style="color:var(--red);">⚠ 배제기준(98%) 적용</strong><br>
+          <small style="color:var(--fg-dim);">낙찰하한율 적용가(${fmt(step4)})가 배제기준보다 낮아 배제기준으로 최종 결정</small>
+        </div>
+        ${netIsExplicit ? `
+        <div style="padding:12px 14px; background:var(--surface); border-radius:8px;">
+          <strong>① 순공사원가 × 98%</strong><br>
+          <small style="color:var(--fg-dim);"><span style="color:var(--red);">${fmt(netEffP)} × 98% = ${fmt(Math.round(bStep3))} 원</span></small>
+        </div>` : `
+        <div style="padding:12px 14px; background:var(--surface); border-radius:8px;">
+          <strong>① 기초금액 ÷ 1.1 (부가세 제거)</strong><br>
+          <small style="color:var(--fg-dim);"><span style="color:var(--red);">${fmt(base)} ÷ 1.1 = ${fmt(Math.round(bStep1))} 원</span></small>
+        </div>
+        <div style="padding:12px 14px; background:var(--surface); border-radius:8px;">
+          <strong>② A값 제거</strong><br>
+          <small style="color:var(--fg-dim);"><span style="color:var(--red);">${fmt(Math.round(bStep1))} - ${fmt(a)} = ${fmt(Math.round(bStep2))} 원</span></small>
+        </div>
+        <div style="padding:12px 14px; background:var(--surface); border-radius:8px;">
+          <strong>③ × 98%</strong><br>
+          <small style="color:var(--fg-dim);"><span style="color:var(--red);">${fmt(Math.round(bStep2))} × 98% = ${fmt(Math.round(bStep3))} 원</span></small>
+        </div>
+        <div style="padding:12px 14px; background:var(--surface); border-radius:8px;">
+          <strong>④ A값 추가</strong><br>
+          <small style="color:var(--fg-dim);"><span style="color:var(--red);">${fmt(Math.round(bStep3))} + ${fmt(a)} = ${fmt(Math.round(bStep4))} 원</span></small>
+        </div>
+        <div style="padding:12px 14px; background:var(--surface); border-radius:8px;">
+          <strong>⑤ 부가세 재결합 (×1.1)</strong><br>
+          <small style="color:var(--fg-dim);"><span style="color:var(--red);">${fmt(Math.round(bStep4))} × 1.1 = ${fmt(Math.round(bStep5))} 원</span></small>
+        </div>`}
+        <div style="padding:14px; background:#FEF2F2; border-radius:8px; border:1px solid #FCA5A5;">
+          <strong>최종 배제기준 = 투찰 제안금액</strong><br>
+          <small><span style="color:var(--red); font-weight:700; font-size:14px;">${fmt(Math.round(isCapped ? limit98P : finalAmt))} 원</span></small>
+        </div>
+      </div>`;
+  } else {
+    document.getElementById('processBody').innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="padding:14px; background:var(--surface); border-radius:8px;">
+          <strong>① 예상 낙찰기준</strong><br>
+          <small style="color:var(--fg-dim);">기초금액 × 분석 사정률<br>
+          <span style="color:var(--blue);">${fmt(base)} × ${adj}% = ${fmt(step1)} 원</span></small>
+        </div>
+        <div style="padding:14px; background:var(--surface); border-radius:8px;">
+          <strong>② A값 제외</strong><br>
+          <small style="color:var(--fg-dim);">①번에서 A값을 뺍니다.<br>
+          <span style="color:var(--blue);">${fmt(step1)} - ${fmt(a)} = ${fmt(step2)} 원</span></small>
+        </div>
+        <div style="padding:14px; background:var(--surface); border-radius:8px;">
+          <strong>③ 낙찰하한율 적용</strong><br>
+          <small style="color:var(--fg-dim);">②번 × 낙찰하한율<br>
+          <span style="color:var(--blue);">${fmt(step2)} × ${lower}% = ${fmt(step3)} 원</span></small>
+        </div>
+        <div style="padding:14px; background:var(--blue-lt); border-radius:8px; border:1px solid #BFDBFE;">
+          <strong>④ 최종 투찰금액</strong><br>
+          <small style="color:var(--fg-dim);">③번 + A값<br>
+          <span style="color:var(--blue); font-weight:700;">${fmt(step3)} + ${fmt(a)} = ${fmt(step4)} 원</span></small>
+        </div>
+      </div>`;
+  }
   openModal('processOverlay');
 };
 
