@@ -518,7 +518,7 @@ body {
                 </label>
               </span>
             </label>
-            <input id="f_net" placeholder="미입력 시 (기초금액÷1.1)-A값 자동적용" oninput="fmtMoney(this);onNetInput();debounceCalc()">
+            <input id="f_net" placeholder="미입력 시 기초금액÷1.1 자동적용" oninput="fmtMoney(this);onNetInput();debounceCalc()">
           </div>
 
           <div class="input-group full">
@@ -1096,8 +1096,13 @@ function doCalc() {
   const rec   = document.getElementById('f_rec');
   // 순공사원가 무이면 기초금액÷1.1 자동 적용
   const netHasVal = document.getElementById('r_net_y')?.checked ?? false;
-  const netEff  = netHasVal ? net : (base > 0 ? Math.ceil(base / 1.1 - a) : 0);
-  const limit98 = netEff * 0.98 + a;  // 순공사원가×98% + A값
+  const netEff  = netHasVal ? net : (base > 0 ? Math.ceil(base / 1.1) : 0);
+  // 배제기준 계산식:
+  // 순공사원가 유: 순공사원가(부가세포함) × 98%
+  // 순공사원가 무: ((기초금액÷1.1) - A값) × 98% + A값) × 1.1
+  const limit98 = netHasVal
+    ? netEff * 0.98
+    : (((base / 1.1) - a) * 0.98 + a) * 1.1;
 
   // 낙찰하한율 기준가
   const lowerBase = ((base - a) * (lower/100)) + a;
@@ -1338,7 +1343,9 @@ window.saveRecord = async function() {
   const adj    = parseFloat(gstr('f_adjust')) || 100;
   const actual = graw('f_actual');
   const limitOn= document.getElementById('r_limit_on')?.checked ?? false;
-  const limit98= net * 0.98;
+  const limit98 = net > 0
+    ? net * 0.98
+    : (((base / 1.1) - a) * 0.98 + a) * 1.1;
   const raw    = ((base - a) * (lower/100) * (adj/100)) + a;
   const final  = limitOn ? Math.max(raw, limit98) : raw;
   const ar     = (base && actual) ? actual/base*100 : 0;
