@@ -507,8 +507,18 @@ body {
             <input id="f_base" placeholder="0" oninput="fmtMoney(this);debounceCalc()">
           </div>
           <div class="input-group">
-            <label>순공사원가</label>
-            <input id="f_net" placeholder="0" oninput="fmtMoney(this);debounceCalc()">
+            <label style="display:flex; align-items:center; justify-content:space-between;">
+              <span>순공사원가</span>
+              <span style="display:flex; gap:10px; font-weight:400;">
+                <label style="display:flex; align-items:center; gap:3px; cursor:pointer; font-size:11px; font-family:var(--mono);">
+                  <input type="radio" name="r_net" id="r_net_y" value="y" onchange="onNetRadio()"> 유
+                </label>
+                <label style="display:flex; align-items:center; gap:3px; cursor:pointer; font-size:11px; font-family:var(--mono);">
+                  <input type="radio" name="r_net" id="r_net_n" value="n" checked onchange="onNetRadio()"> 무
+                </label>
+              </span>
+            </label>
+            <input id="f_net" placeholder="미입력 시 기초금액÷1.1 자동적용" oninput="fmtMoney(this);onNetInput();debounceCalc()">
           </div>
 
           <div class="input-group full">
@@ -1005,6 +1015,9 @@ function selectItem(r) {
   sf('f_start2',  r.start2||'');
   smf('f_base',   r.base);
   smf('f_net',    r.net_cost);
+  const hasNet = r.net_cost > 0;
+  document.getElementById('r_net_y').checked = hasNet;
+  document.getElementById('r_net_n').checked = !hasNet;
   smf('f_a',      r.a_value);
   sf('f_adjust',  (r.adjust_rate||100).toFixed(4));
   document.getElementById('f_lower').value = (r.lower_rate||87.745).toFixed(3);
@@ -1049,6 +1062,8 @@ window.clearForm = function() {
   document.getElementById('bidDiffWrap').style.display = 'none';
   document.getElementById('r_limit_off').checked = true;
   document.getElementById('r_limit_on').checked  = false;
+  document.getElementById('r_net_n').checked = true;
+  document.getElementById('r_net_y').checked = false;
   document.getElementById('r_reserve_3').checked = true;
   document.getElementById('r_reserve_2').checked = false;
   window._realBidSet = false;
@@ -1079,13 +1094,16 @@ function doCalc() {
   const limitOn = document.getElementById('r_limit_on')?.checked ?? false;
   const lbl   = document.getElementById('lbl98');
   const rec   = document.getElementById('f_rec');
-  const limit98 = net * 0.98;
+  // 순공사원가 무이면 기초금액÷1.1 자동 적용
+  const netHasVal = document.getElementById('r_net_y')?.checked ?? false;
+  const netEff  = netHasVal ? net : (base > 0 ? Math.ceil(base / 1.1) : 0);
+  const limit98 = netEff * 0.98;
 
-  if (net > 0 && limitOn) lbl.textContent = `배제기준(98%): ${fmt(limit98)}`;
-  else if (net > 0)       lbl.textContent = `배제기준(98%): 미적용`;
+  if (netEff > 0 && limitOn) lbl.textContent = `배제기준(98%): ${fmt(limit98)}${!netHasVal ? ' (자동)' : ''}`;
+  else if (netEff > 0)       lbl.textContent = `배제기준(98%): 미적용`;
   else                    lbl.textContent = '배제기준(98%): —';
 
-  updateProfitCard(base, net);
+  updateProfitCard(base, netEff);
 
   if (!base) {
     rec.value = '';
@@ -1106,7 +1124,7 @@ function doCalc() {
   rec.value = capped ? `${fmt(result)}  ⚠ 배제적용` : fmt(result);
 
   // 수익성 차이
-  const diffAmt = result - net;
+  const diffAmt = result - netEff;
   const diffEl  = document.getElementById('diffAmount');
   const diffMsg = document.getElementById('diffMsg');
   diffEl.textContent = (diffAmt >= 0 ? '+' : '') + fmt(diffAmt) + ' 원';
@@ -1622,6 +1640,24 @@ window.updateBidDiff = function() {
   if (diffRec < diffReal)       { winEl.innerHTML = '🏆 통계 승!'; winEl.style.color = 'var(--blue)'; }
   else if (diffReal < diffRec)  { winEl.innerHTML = '🏆 감 승!';   winEl.style.color = 'var(--amber)'; }
   else                          { winEl.innerHTML = '🤝 무승부!';  winEl.style.color = 'var(--fg-dim)'; }
+};
+
+// ── 순공사원가 유/무 처리 ────────────────────
+window.onNetInput = function() {
+  const val = document.getElementById('f_net').value.trim();
+  const hasVal = val !== '' && val !== '0';
+  document.getElementById('r_net_y').checked = hasVal;
+  document.getElementById('r_net_n').checked = !hasVal;
+};
+window.onNetRadio = function() {
+  const isY = document.getElementById('r_net_y').checked;
+  if (!isY) {
+    // 무 선택 시 입력값 초기화
+    document.getElementById('f_net').value = '';
+  } else {
+    document.getElementById('f_net').focus();
+  }
+  debounceCalc();
 };
 
 // ── 낙찰하한율 드롭다운 ──────────────────────
