@@ -1127,7 +1127,6 @@ function selectItem(r) {
   document.getElementById('r_net_y').checked = hasNet;
   document.getElementById('r_net_n').checked = !hasNet;
   smf('f_a',      r.a_value);
-  sf('f_adjust',  (r.adjust_rate||100).toFixed(4));
   document.getElementById('f_lower').value = (r.lower_rate||87.745).toFixed(3);
   smf('f_actual', r.actual_result > 0 ? r.actual_result : '');
   sf('f_result_reason', r.result_reason || '');
@@ -1145,8 +1144,10 @@ function selectItem(r) {
   document.getElementById('r_limit_off').disabled  = !hasNet;
   document.getElementById('limitRadioRow').style.opacity = hasNet ? '1' : '0.35';
   document.getElementById('limitNoNet').style.display    = hasNet ? 'none' : 'block';
-  analyzeClient(false);
-  doCalc();
+  // 발주처 평균 사정율 자동입력 (이력 없으면 저장된 값 fallback)
+  const savedAdj = (r.adjust_rate||100).toFixed(4);
+  sf('f_adjust', savedAdj);
+  analyzeClient(true);
   // 사후 복기 동기화
   smf('act_base',  r.real_base || '');
   smf('act_net',   r.real_net  || '');
