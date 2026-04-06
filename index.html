@@ -582,12 +582,13 @@ body {
             </div>
           </div>
 
-          <div class="input-group">
+          <div class="input-group" id="limitGroup">
             <label>배제기준(98%)</label>
-            <div class="radio-row">
+            <div class="radio-row" id="limitRadioRow">
               <label><input type="radio" name="r_limit" id="r_limit_on" value="on" onchange="debounceCalc()"> 적용</label>
               <label><input type="radio" name="r_limit" id="r_limit_off" value="off" checked onchange="debounceCalc()"> 미적용</label>
             </div>
+            <div id="limitNoNet" style="display:none; font-size:11px; color:var(--fg-muted); font-family:var(--mono);">순공사원가 미제공 — 배제기준 적용 불가</div>
           </div>
           <div class="input-group">
             <label>예비가격범위</label>
@@ -1136,9 +1137,14 @@ function selectItem(r) {
   const reserve = r.reserve_range || '3';
   document.getElementById('r_reserve_2').checked = reserve === '2';
   document.getElementById('r_reserve_3').checked = reserve !== '2';
-  const limitOn = r.limit_applied !== false;
-  document.getElementById('r_limit_on').checked  = limitOn;
-  document.getElementById('r_limit_off').checked = !limitOn;
+  const limitOn = r.limit_applied !== false && hasNet;
+  document.getElementById('r_limit_on').checked   = limitOn;
+  document.getElementById('r_limit_off').checked  = !limitOn;
+  // 순공사원가 유/무에 따라 배제기준 UI 상태 복원
+  document.getElementById('r_limit_on').disabled   = !hasNet;
+  document.getElementById('r_limit_off').disabled  = !hasNet;
+  document.getElementById('limitRadioRow').style.opacity = hasNet ? '1' : '0.35';
+  document.getElementById('limitNoNet').style.display    = hasNet ? 'none' : 'block';
   analyzeClient(false);
   doCalc();
   // 사후 복기 동기화
@@ -1167,10 +1173,15 @@ window.clearForm = function() {
   document.getElementById('analysisResult').textContent = '발주처를 입력하세요';
   document.getElementById('analysisResult').className = 'analysis-value muted';
   document.getElementById('bidDiffWrap').style.display = 'none';
-  document.getElementById('r_limit_off').checked = true;
-  document.getElementById('r_limit_on').checked  = false;
+  document.getElementById('r_limit_off').checked  = true;
+  document.getElementById('r_limit_on').checked   = false;
   document.getElementById('r_net_n').checked = true;
   document.getElementById('r_net_y').checked = false;
+  // 신규 시 순공사원가 무 → 배제기준 비활성화
+  document.getElementById('r_limit_on').disabled   = true;
+  document.getElementById('r_limit_off').disabled  = true;
+  document.getElementById('limitRadioRow').style.opacity = '0.35';
+  document.getElementById('limitNoNet').style.display    = 'block';
   document.getElementById('r_reserve_3').checked = true;
   document.getElementById('r_reserve_2').checked = false;
   window._realBidSet = false;
@@ -1198,41 +1209,42 @@ function doCalc() {
   const a     = graw('f_a');
   const lower = parseFloat(document.getElementById('f_lower').value) || 87.745;
   const adj   = parseFloat(gstr('f_adjust')) || 100;
-  const limitOn = document.getElementById('r_limit_on')?.checked ?? false;
   const lbl   = document.getElementById('lbl98');
   const rec   = document.getElementById('f_rec');
-  // 순공사원가 무이면 기초금액÷1.1 자동 적용
+  // 순공사원가 유/무
   const netHasVal = document.getElementById('r_net_y')?.checked ?? false;
-  const netEff  = netHasVal ? net : (base > 0 ? Math.ceil(base / 1.1) : 0);
-  // 배제기준 계산식:
-  // 순공사원가 유: 순공사원가(부가세포함) × 98%
-  // 순공사원가 무: ((기초금액÷1.1) - A값) × 98% + A값) × 1.1
-  const limit98 = netHasVal
-    ? netEff * 0.98
-    : (((base / 1.1) - a) * 0.98 + a) * 1.1;
+  const limitOn   = netHasVal && (document.getElementById('r_limit_on')?.checked ?? false);
+  const netEff    = netHasVal ? net : 0;
+
+  // 배제기준 계산 (순공사원가 유일 때만)
+  const limit98   = netHasVal && netEff > 0 ? netEff * 0.98 : 0;
 
   // 낙찰하한율 기준가
-  const lowerBase = ((base - a) * (lower/100)) + a;
-  const dangerZone = limitOn && netEff > 0 && limit98 > lowerBase;
+  const lowerBase  = ((base - a) * (lower/100)) + a;
+  const dangerZone = limitOn && limit98 > 0 && limit98 > lowerBase;
 
-  if (netEff > 0 && limitOn) {
-    const autoText = !netHasVal ? ' (자동)' : '';
+  // 배제기준 라벨
+  if (!netHasVal) {
+    lbl.textContent   = '배제기준(98%): 순공사원가 미제공';
+    lbl.style.color      = 'var(--fg-muted)';
+    lbl.style.fontWeight = '400';
+  } else if (limitOn) {
     if (dangerZone) {
-      lbl.textContent = `⚠️ 배제기준: ${fmt(limit98)}${autoText} > 낙찰하한율 기준가: ${fmt(lowerBase)} — 배제기준이 실질 하한선!`;
-      lbl.style.color = 'var(--red)';
+      lbl.textContent   = `⚠️ 배제기준: ${fmt(limit98)} > 낙찰하한율 기준가: ${fmt(lowerBase)} — 배제기준이 실질 하한선!`;
+      lbl.style.color      = 'var(--red)';
       lbl.style.fontWeight = '600';
     } else {
-      lbl.textContent = `배제기준(98%): ${fmt(limit98)}${autoText}`;
-      lbl.style.color = 'var(--red)';
+      lbl.textContent   = `배제기준(98%): ${fmt(limit98)}`;
+      lbl.style.color      = 'var(--red)';
       lbl.style.fontWeight = '400';
     }
   } else if (netEff > 0) {
-    lbl.textContent = '배제기준(98%): 미적용';
-    lbl.style.color = 'var(--fg-muted)';
+    lbl.textContent   = '배제기준(98%): 미적용';
+    lbl.style.color      = 'var(--fg-muted)';
     lbl.style.fontWeight = '400';
   } else {
-    lbl.textContent = '배제기준(98%): —';
-    lbl.style.color = 'var(--fg-muted)';
+    lbl.textContent   = '배제기준(98%): —';
+    lbl.style.color      = 'var(--fg-muted)';
     lbl.style.fontWeight = '400';
   }
 
@@ -1312,13 +1324,15 @@ function updateProfitCard(base, net, dangerZone=false, recAmt=0, netHasVal=true)
 
   // ── 순공사원가 미제공 공고 ──
   if (!netHasVal) {
-    const ratio = (recAmt > 0 ? recAmt : 0) / base * 100;
-    card.className   = 'profit-card danger';
-    zone.textContent = '🚨 순공사원가 미제공 공고';
-    rate.textContent = ratio > 0 ? ratio.toFixed(2) + '%' : '—';
-    sub.textContent  = `공고기초금액 대비 ${ratio.toFixed(2)}% 수준 계약 — 경영 판단 사항`;
-    if (diffLbl) diffLbl.textContent = '일반관리비·이윤 확보 불가';
-    if (formulaEl) formulaEl.textContent = '배제기준 적용가 ÷ 공고기초금액 × 100';
+    card.className   = 'profit-card idle';
+    zone.textContent = '순공사원가 미제공';
+    rate.textContent = '—';
+    sub.textContent  = '수익성 분석 불가';
+    if (diffLbl) diffLbl.textContent = '일반관리비 및 이윤 가용액';
+    if (formulaEl) formulaEl.textContent = '';
+    document.getElementById('diffAmount').textContent = '—';
+    document.getElementById('diffAmount').style.color = 'var(--fg-muted)';
+    document.getElementById('diffMsg').textContent    = '';
     return;
   }
 
@@ -1883,10 +1897,21 @@ window.onNetInput = function() {
 window.onNetRadio = function() {
   const isY = document.getElementById('r_net_y').checked;
   if (!isY) {
-    // 무 선택 시 입력값 초기화
     document.getElementById('f_net').value = '';
+    // 순공사원가 무 → 배제기준 비활성화
+    document.getElementById('r_limit_on').checked  = false;
+    document.getElementById('r_limit_off').checked = true;
+    document.getElementById('r_limit_on').disabled  = true;
+    document.getElementById('r_limit_off').disabled = true;
+    document.getElementById('limitRadioRow').style.opacity = '0.35';
+    document.getElementById('limitNoNet').style.display = 'block';
   } else {
     document.getElementById('f_net').focus();
+    // 순공사원가 유 → 배제기준 활성화
+    document.getElementById('r_limit_on').disabled  = false;
+    document.getElementById('r_limit_off').disabled = false;
+    document.getElementById('limitRadioRow').style.opacity = '1';
+    document.getElementById('limitNoNet').style.display = 'none';
   }
   debounceCalc();
 };
