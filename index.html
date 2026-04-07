@@ -1144,10 +1144,11 @@ function selectItem(r) {
   document.getElementById('r_limit_off').disabled  = !hasNet;
   document.getElementById('limitRadioRow').style.opacity = hasNet ? '1' : '0.35';
   document.getElementById('limitNoNet').style.display    = hasNet ? 'none' : 'block';
-  // 발주처 평균 사정율 자동입력 (이력 없으면 저장된 값 fallback)
-  const savedAdj = (r.adjust_rate||100).toFixed(4);
-  sf('f_adjust', savedAdj);
-  analyzeClient(true);
+  // 저장된 사정율 복원 (내가 수정한 값 유지)
+  sf('f_adjust', (r.adjust_rate||100).toFixed(4));
+  // 이력 평균은 참고용으로만 표시 (f_adjust 덮어쓰지 않음)
+  analyzeClient(false);
+  doCalc();
   // 사후 복기 동기화
   smf('act_base',  r.real_base || '');
   smf('act_net',   r.real_net  || '');
