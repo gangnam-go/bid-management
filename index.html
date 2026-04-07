@@ -1088,6 +1088,18 @@ function renderList() {
                        : '<span class="bid-badge badge-active">ACTIVE</span>';
     const end1s   = (r.end1||'').slice(5, done ? 10 : 16);
     const start2s = (r.start2||'').slice(5, done ? 10 : 16);
+    // 순공사원가/기초금액 비율
+    const netRatio = (r.net_cost > 0 && r.base > 0)
+      ? (r.net_cost / r.base * 100).toFixed(1) + '%'
+      : null;
+    const ratioColor = netRatio
+      ? (parseFloat(netRatio) <= 90 ? 'var(--green)'
+       : parseFloat(netRatio) <= 92 ? 'var(--amber)'
+       : 'var(--red)')
+      : '';
+    const ratioBadge = netRatio
+      ? `<span style="font-size:10px; font-family:var(--mono); font-weight:600; color:${ratioColor}; margin-right:6px;">${netRatio}</span>`
+      : '';
     return `
     <div class="bid-card ${sel?'selected':''}" data-notice="${r.notice}">
       <div class="bid-dot ${dotCls}">${dot}</div>
@@ -1099,7 +1111,7 @@ function renderList() {
           <span><span class="bid-date-lbl">시작 </span>${start2s}</span>
         </div>
       </div>
-      <div>${badge}</div>
+      <div style="display:flex; align-items:center;">${ratioBadge}${badge}</div>
     </div>`;
   }).join('');
 
