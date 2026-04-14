@@ -1078,10 +1078,17 @@ function renderList() {
                        : '<span class="bid-badge badge-active">ACTIVE</span>';
     const end1s   = (r.end1||'').slice(5, done ? 10 : 16);
     const start2s = (r.start2||'').slice(5, done ? 10 : 16);
-    // 순공사원가/기초금액 비율
-    const netRatio = (r.net_cost > 0 && r.base > 0)
-      ? (r.net_cost / r.base * 100).toFixed(1) + '%'
-      : null;
+    // 수익성 비율
+    // 개찰 전: 순공사원가 / 추천투찰가
+    // 개찰 후: 예정순공사원가 / 실제 낙찰가
+    let netRatio = null;
+    if (done) {
+      if (r.real_net > 0 && r.actual_result > 0)
+        netRatio = (r.real_net / r.actual_result * 100).toFixed(1) + '%';
+    } else {
+      if (r.net_cost > 0 && r.final_bid > 0)
+        netRatio = (r.net_cost / r.final_bid * 100).toFixed(1) + '%';
+    }
     const ratioColor = netRatio
       ? (parseFloat(netRatio) <= 90 ? 'var(--green)'
        : parseFloat(netRatio) <= 92 ? 'var(--amber)'
