@@ -1224,7 +1224,7 @@ function doCalc() {
   const netEff    = netHasVal ? net : 0;
 
   // 배제기준 계산 (순공사원가 유일 때만)
-  const limit98   = netHasVal && netEff > 0 ? netEff * 0.98 : 0;
+  const limit98   = netHasVal && netEff > 0 ? netEff * (adj/100) * 0.98 : 0;
 
   // 낙찰하한율 기준가
   const lowerBase  = ((base - a) * (lower/100)) + a;
@@ -1381,7 +1381,7 @@ window.runActCalc = function() {
     if (!base) return 0;
     const limitOn = document.getElementById('r_limit_on')?.checked ?? false;
     const raw = ((base * (adj/100) - a) * (lower/100)) + a;
-    return limitOn ? Math.max(raw, net * 0.98) : raw;
+    return limitOn ? Math.max(raw, net * (adj/100) * 0.98) : raw;
   })();
 
   // 요약 테이블 업데이트
@@ -1485,8 +1485,8 @@ window.saveRecord = async function() {
   const actual = graw('f_actual') || graw('act_price');
   const limitOn= document.getElementById('r_limit_on')?.checked ?? false;
   const limit98 = net > 0
-    ? net * 0.98
-    : (((base / 1.1) - a) * 0.98 + a) * 1.1;
+    ? net * (adj/100) * 0.98
+    : (((base * (adj/100) / 1.1) - a) * 0.98 + a) * 1.1;
   const raw    = ((base * (adj/100) - a) * (lower/100)) + a;
   const final  = limitOn ? Math.max(raw, limit98) : raw;
   const ar     = (base && actual) ? actual/base*100 : 0;
@@ -1740,8 +1740,8 @@ window.openProcessModal = function() {
   const netEffP = (document.getElementById('r_net_y')?.checked && netVal > 0)
     ? netVal : (base > 0 ? Math.ceil(base / 1.1) : 0);
   const limit98P = (document.getElementById('r_net_y')?.checked && netVal > 0)
-    ? netEffP * 0.98
-    : (((base / 1.1) - a) * 0.98 + a) * 1.1;
+    ? netEffP * (adj/100) * 0.98
+    : (((base * (adj/100) / 1.1) - a) * 0.98 + a) * 1.1;
   const isCapped = step4 < limit98P && base > 0 && document.getElementById('r_limit_on')?.checked;
   const finalAmt = isCapped ? limit98P : step4;
 
