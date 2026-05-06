@@ -606,10 +606,12 @@ body {
               <div id="lowerList" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--panel); border:1px solid var(--border2); border-radius:6px; box-shadow:var(--shadow-md); z-index:50; overflow:hidden; margin-top:2px;">
                 <div class="lower-opt" onclick="pickLower('89.745')">89.745%</div>
                 <div class="lower-opt" onclick="pickLower('88.745')">88.745%</div>
+                <div class="lower-opt" onclick="pickLower('87.995')">87.995%</div>
                 <div class="lower-opt" onclick="pickLower('87.745')">87.745%</div>
                 <div class="lower-opt" onclick="pickLower('87.495')">87.495%</div>
                 <div class="lower-opt" onclick="pickLower('86.745')">86.745%</div>
                 <div class="lower-opt" onclick="pickLower('85.745')">85.745%</div>
+                <div class="lower-opt" style="border-top:1px solid var(--border); color:var(--blue);" onclick="focusLowerInput()">✏️ 직접입력</div>
               </div>
             </div>
           </div>
@@ -1922,6 +1924,13 @@ window.toggleLowerList = function() {
   const list = document.getElementById('lowerList');
   list.style.display = list.style.display === 'none' ? 'block' : 'none';
 };
+window.focusLowerInput = function() {
+  document.getElementById('lowerList').style.display = 'none';
+  const el = document.getElementById('f_lower');
+  el.value = '';
+  el.focus();
+};
+
 window.pickLower = function(val) {
   document.getElementById('f_lower').value = val;
   document.getElementById('lowerList').style.display = 'none';
