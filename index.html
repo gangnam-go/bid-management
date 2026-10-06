@@ -1312,26 +1312,47 @@ function analyzeClient(fillAdj = true) {
   const rates = useRecs.map(r => calcEffAdj(r)).filter(v => v !== null);
 
   if (!rates.length) {
-    el.textContent = `[${client}]  분석 데이터 없음 (±${curReserve}% 기준)`;
+    el.textContent = `[${client}]  분석 데이터 없음 → 기본값 100% 적용`;
     el.className   = 'analysis-value error';
+    if (fillAdj) { sf('f_adjust', '100.0000'); doCalc(); }
     return;
   }
-  const avg = rates.reduce((a,b)=>a+b,0) / rates.length;
-  el.textContent = `추천 사정률  ${avg.toFixed(4)}%   (${rates.length}건 ±${curReserve}%)`;
-  el.className   = 'analysis-value';
-  if (fillAdj) { sf('f_adjust', avg.toFixed(4)); doCalc(); }
+  const res = calcRegressAdj(rates);
+  const confIcon = res.confidence === 3 ? '●●●' : res.confidence === 2 ? '●●○' : '●○○';
+  const corrSign = res.correction >= 0 ? '+' : '';
+  const corrText = res.n >= 5 ? `  보정 ${corrSign}${res.correction.toFixed(4)}%` : '';
+  el.innerHTML = `추천 사정률 &nbsp;<strong>${res.adj.toFixed(4)}%</strong>&nbsp; `
+    + `<span style="font-size:11px;color:var(--fg-muted);">`
+    + `평균 ${res.avg.toFixed(4)}%${corrText} &nbsp;|&nbsp; ${rates.length}건 ±${curReserve}% &nbsp;|&nbsp; 신뢰도 ${confIcon}(${res.label})`
+    + `</span>`;
+  el.className = 'analysis-value';
+  if (fillAdj) { sf('f_adjust', res.adj.toFixed(4)); doCalc(); }
 }
 
-// ── 역산 사정률 계산 ──────────────────────────
+// ── 사정율 계산 (real_base / base × 100) ─────
 function calcEffAdj(r) {
-  const base  = r.real_base || r.base || 0;
-  const a     = r.a_value || 0;
-  const lower = r.lower_rate || 87.745;
-  const actual= r.actual_result || 0;
-  const denom = base - a;
-  if (!r.is_completed || denom <= 0) return null;
-  try { return ((actual - a) / denom) / (lower/100) * 100; }
-  catch { return null; }
+  const realBase = r.real_base || 0;
+  const base     = r.base     || 0;
+  if (!r.is_completed || !realBase || !base) return null;
+  return (realBase / base) * 100;
+}
+
+// ── 회귀 보정 사정율 계산 ────────────────────
+function calcRegressAdj(rates) {
+  const n = rates.length;
+  if (n === 0) return { adj: 100, avg: 100, correction: 0, n: 0, confidence: 0, label: '기준값' };
+  const avg = rates.reduce((a,b)=>a+b,0) / n;
+  const recentN = Math.min(3, n);
+  const recent  = rates.slice(-recentN);
+  const recentDeviationSum = recent.reduce((s,v) => s + (v - 100), 0);
+  const weight = n >= 10 ? 1.0 : n >= 5 ? 0.5 : 0.2;
+  const correction = Math.max(-1.5, Math.min(1.5, -recentDeviationSum * 0.25 * weight));
+  const adj = avg + correction;
+  let confidence, label;
+  if (n >= 10) { confidence = 3; label = '높음'; }
+  else if (n >= 5) { confidence = 2; label = '중간'; }
+  else { confidence = 1; label = '낮음'; }
+  return { adj, avg, correction, n, confidence, label };
 }
 
 // ── 저장 ─────────────────────────────────────
@@ -1702,8 +1723,19 @@ window.showHistory = function() {
   const stdText = stddev !== null ? `  σ ${stddev.toFixed(4)}%` : rates.length < 2 ? '  (데이터 부족)' : '';
 
   document.getElementById('historyTitle').textContent = `${client}  낙찰 이력 (±${curReserve}%)`;
-  document.getElementById('historyAvg').textContent   = avg
-    ? `평균 ${avg.toFixed(4)}%${stdText}  (${rates.length}건)`  : '';
+  if (rates.length > 0) {
+    const res = calcRegressAdj(rates);
+    const confIcon = res.confidence === 3 ? '●●●' : res.confidence === 2 ? '●●○' : '●○○';
+    const corrSign = res.correction >= 0 ? '+' : '';
+    const corrText = res.n >= 5 ? ` / 보정 ${corrSign}${res.correction.toFixed(4)}%` : ' / 데이터 부족 — 보정 미적용';
+    document.getElementById('historyAvg').innerHTML =
+      `평균 ${avg.toFixed(4)}%${stdText}  (${rates.length}건)` +
+      `<br><span style="font-size:12px;color:var(--blue);">` +
+      `▶ 추천 사정률 <strong>${res.adj.toFixed(4)}%</strong>${corrText} &nbsp; 신뢰도 ${confIcon}(${res.label})` +
+      `</span>`;
+  } else {
+    document.getElementById('historyAvg').textContent = '';
+  }
 
   const rows = useRecs.map(r => ({ r, eff: calcEffAdj(r) })).filter(x => x.eff !== null);
   document.getElementById('historyBody').innerHTML = rows.length
