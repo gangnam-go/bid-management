@@ -1821,10 +1821,12 @@ window.pickReason = function(val) {
 
 // 외부 클릭 시 드롭다운 닫기
 document.addEventListener('click', e => {
-  if (!e.target.closest('#f_lower') && !e.target.closest('#lowerList') && !e.target.closest('button[onclick="toggleLowerList()"]'))
-    document.getElementById('lowerList').style.display = 'none';
-  if (!e.target.closest('#f_result_reason') && !e.target.closest('#reasonList') && !e.target.closest('button[onclick="toggleReasonList()"]'))
-    document.getElementById('reasonList').style.display = 'none';
+  const lowerList  = document.getElementById('lowerList');
+  const reasonList = document.getElementById('reasonList');
+  if (lowerList && !e.target.closest('#f_lower') && !e.target.closest('#lowerList') && !e.target.closest('button[onclick="toggleLowerList()"]'))
+    lowerList.style.display = 'none';
+  if (reasonList && !e.target.closest('#f_result_reason') && !e.target.closest('#reasonList') && !e.target.closest('button[onclick="toggleReasonList()"]'))
+    reasonList.style.display = 'none';
 });
 
 // ── 모달 ─────────────────────────────────────
