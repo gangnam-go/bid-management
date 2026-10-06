@@ -442,9 +442,62 @@ body {
 /* ── 결과분석 배지 ── */
 .net98-badge { font-size: 11px; color: var(--red); font-family: var(--mono); padding: 4px 10px; background: var(--red-lt); border-radius: 4px; white-space: nowrap; }
 .act-msg { font-size: 12px; font-weight: 700; margin-top: 6px; }
+
+/* ── 로그인 화면 ── */
+#loginScreen {
+  display: none; position: fixed; inset: 0;
+  background: var(--bg); z-index: 200;
+  align-items: center; justify-content: center;
+}
+#loginScreen.show { display: flex; }
+.login-box {
+  background: var(--panel); border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  padding: 40px 44px; width: 380px;
+  display: flex; flex-direction: column; gap: 20px;
+}
+.login-logo { font-size: 18px; font-weight: 800; color: var(--blue); letter-spacing: -0.3px; text-align: center; }
+.login-logo span { font-weight: 300; font-size: 12px; color: var(--fg-muted); display: block; margin-top: 4px; }
+.login-field { display: flex; flex-direction: column; gap: 6px; }
+.login-field label { font-size: 12px; font-weight: 600; color: var(--fg-dim); }
+.login-field input {
+  padding: 10px 12px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 13px; font-family: var(--mono);
+  background: var(--surface); color: var(--fg); outline: none;
+  transition: border-color var(--tr);
+}
+.login-field input:focus { border-color: var(--blue); background: #fff; }
+.login-btn {
+  padding: 11px; background: var(--blue); color: #fff;
+  border: none; border-radius: 8px; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: background var(--tr);
+}
+.login-btn:hover { background: var(--blue-d); }
+.login-error { font-size: 12px; color: var(--red); text-align: center; min-height: 16px; }
 </style>
 </head>
 <body>
+
+<!-- ── 로그인 화면 ── -->
+<div id="loginScreen" class="show">
+  <div class="login-box">
+    <div class="login-logo">
+      BIDDING STRATEGY
+      <span>입찰 관리 시스템</span>
+    </div>
+    <div class="login-field">
+      <label>이메일</label>
+      <input type="email" id="loginEmail" placeholder="이메일 입력" autocomplete="email">
+    </div>
+    <div class="login-field">
+      <label>비밀번호</label>
+      <input type="password" id="loginPw" placeholder="비밀번호 입력" autocomplete="current-password">
+    </div>
+    <div class="login-error" id="loginError"></div>
+    <button class="login-btn" id="loginBtn">로그인</button>
+  </div>
+</div>
 
 <!-- ── 네비바 ── -->
 <nav class="navbar">
@@ -459,6 +512,8 @@ body {
     <button class="nav-btn" onclick="openCalModal()">📅 달력</button>
     <button class="nav-btn" onclick="openGuideModal()">📖 계산식 안내</button>
     <span class="nav-date" id="headerDate"></span>
+    <span style="font-size:11px; opacity:0.7; font-family:var(--mono);" id="navUserEmail"></span>
+    <button class="nav-btn" id="logoutBtn" style="background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.3);" onclick="doLogout()">로그아웃</button>
   </div>
 </nav>
 
@@ -527,12 +582,13 @@ body {
             </div>
           </div>
 
-          <div class="input-group">
+          <div class="input-group" id="limitGroup">
             <label>배제기준(98%)</label>
-            <div class="radio-row">
+            <div class="radio-row" id="limitRadioRow">
               <label><input type="radio" name="r_limit" id="r_limit_on" value="on" onchange="debounceCalc()"> 적용</label>
               <label><input type="radio" name="r_limit" id="r_limit_off" value="off" checked onchange="debounceCalc()"> 미적용</label>
             </div>
+            <div id="limitNoNet" style="display:none; font-size:11px; color:var(--fg-muted); font-family:var(--mono);">순공사원가 미제공 — 배제기준 적용 불가</div>
           </div>
           <div class="input-group">
             <label>예비가격범위</label>
@@ -550,10 +606,12 @@ body {
               <div id="lowerList" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--panel); border:1px solid var(--border2); border-radius:6px; box-shadow:var(--shadow-md); z-index:50; overflow:hidden; margin-top:2px;">
                 <div class="lower-opt" onclick="pickLower('89.745')">89.745%</div>
                 <div class="lower-opt" onclick="pickLower('88.745')">88.745%</div>
+                <div class="lower-opt" onclick="pickLower('87.995')">87.995%</div>
                 <div class="lower-opt" onclick="pickLower('87.745')">87.745%</div>
                 <div class="lower-opt" onclick="pickLower('87.495')">87.495%</div>
                 <div class="lower-opt" onclick="pickLower('86.745')">86.745%</div>
                 <div class="lower-opt" onclick="pickLower('85.745')">85.745%</div>
+                <div class="lower-opt" style="border-top:1px solid var(--border); color:var(--blue);" onclick="focusLowerInput()">✏️ 직접입력</div>
               </div>
             </div>
           </div>
@@ -571,35 +629,7 @@ body {
             <input id="f_rec" placeholder="—" readonly style="color:var(--green); font-weight:600; background:var(--green-lt);">
           </div>
 
-          <div class="input-group" style="display:none;">
-            <label>실제 투찰금액</label>
-            <input id="f_real_bid" placeholder="추천금액 자동입력" oninput="fmtMoney(this);updateBidDiff()">
-          </div>
-          <div class="input-group" style="display:none;">
-            <label>결과/탈락사유(구)</label>
-            <div style="position:relative; display:flex; align-items:center;">
-              <input id="f_result_reason_old" placeholder="선택 또는 직접입력" autocomplete="off" style="width:100%; padding-right:28px;">
-              <div style="display:none;">
-                <div class="lower-opt" onclick="pickReason('낙찰')">🎉 낙찰</div>
-                <div class="lower-opt" onclick="pickReason('낙찰(배제기준 적용)')">🎉 낙찰 (배제기준 적용 — 사정률 무의미)</div>
-                <div class="lower-opt" onclick="pickReason('정상')">정상 (낙찰가보다 높음)</div>
-                <div class="lower-opt" onclick="pickReason('낙찰하한선 미달')">낙찰하한선 미달</div>
-                <div class="lower-opt" onclick="pickReason('순공사원가 98%미만')">순공사원가 98%미만</div>
-                <div class="lower-opt" style="border-top:1px solid var(--border); color:var(--fg-dim);" onclick="pickReason('불참(토목면허 필요)')">불참 — 토목면허 필요</div>
-                <div class="lower-opt" onclick="pickReason('불참(정상)')">불참 — 정상</div>
-                <div class="lower-opt" onclick="pickReason('불참(낙찰하한선 미달)')">불참 — 낙찰하한선 미달</div>
-                <div class="lower-opt" onclick="pickReason('불참(순공사원가 98%미만)')">불참 — 순공사원가 98%미만</div>
-                <div class="lower-opt" style="border-top:1px solid var(--border);" onclick="pickReason('직접입력')">✏️ 직접입력</div>
-              </div>
-            </div>
-          </div>
-          <div id="bidDiffWrap" class="full" style="display:none; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-family:var(--mono); font-size:11px;">
-            <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
-              <span id="bidDiffRec"></span>
-              <span id="bidDiffReal"></span>
-              <span id="bidDiffWinner" style="font-weight:700; margin-left:auto;"></span>
-            </div>
-          </div>
+
         </div>
       </div>
       <div class="btn-bar">
@@ -634,13 +664,13 @@ body {
                 <td rowspan="2" class="adj-cell" style="width:13%;"><span class="lbl">사정율</span><span class="val" id="sum_adjust_rate">—</span></td>
                 <td style="width:18%;"><span class="lbl">예정금액</span><span class="val" id="sum_est_price">—</span></td>
                 <td style="width:12%;"><span class="lbl">낙찰하한율</span><span class="val" id="sum_lower_rate">—</span></td>
-                <td style="width:12%;"><span class="lbl">A값</span><span class="val" id="sum_a">—</span></td>
                 <td class="rec-cell" style="width:27%;"><span class="lbl">추천투찰가</span><span class="val" id="sum_recommend">—</span></td>
               </tr>
               <tr>
                 <td><span class="lbl">공고순공사원가</span><span class="val" id="sum_net">—</span></td>
                 <td><span class="lbl">예정순공사원가</span><span class="val" id="sum_est_net">—</span></td>
-                <td colspan="3"><span class="lbl">예정순공사원가 98%</span><span class="val" id="sum_net98">—</span></td>
+                <td><span class="lbl">A값</span><span class="val" id="sum_a">—</span></td>
+                <td><span class="lbl">예정순공사원가 98%</span><span class="val" id="sum_net98">—</span></td>
               </tr>
             </table>
           </div>
@@ -686,12 +716,13 @@ body {
       <div class="profit-zone" id="profitZone">분석 대기 중</div>
       <div class="profit-rate" id="profitRate">—</div>
       <div class="profit-sub" id="profitSub">
-        90.0% 이하 안정권<br>
+        90.0% 이하 안정 구간<br>
         90.0~92.0% 주의 구간<br>
-        92.0% 초과 위험 구간
+        92.0% 초과 경계 구간
       </div>
+      <div style="font-size:10px; color:var(--fg-muted); font-family:var(--mono); margin-top:6px;" id="profitFormula">순공사원가 ÷ 추천투찰가 × 100</div>
       <div class="diff-box">
-        <div class="diff-label">추천투찰가 대비 수익성</div>
+        <div class="diff-label" id="diff-label-txt">일반관리비 및 이윤 가용액</div>
         <div class="diff-amount" id="diffAmount">— 원</div>
         <div class="diff-msg" id="diffMsg">—</div>
       </div>
@@ -918,6 +949,8 @@ body {
 import { initializeApp }                          from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, doc, setDoc,
          deleteDoc, onSnapshot, query, orderBy }  from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword,
+         signOut, onAuthStateChanged }            from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyAKrG9Hp2KDt0bl_XXKcxWUfWzcCJ7_99M",
@@ -928,9 +961,10 @@ const firebaseConfig = {
   appId:             "1:346439905435:web:5eb15f42bd5b61cc57563e"
 };
 
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
-const COL = "bids";
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+const COL  = "bids";
 
 // ── 전역 상태 ──────────────────────────────────
 let records        = [];
@@ -946,17 +980,65 @@ let deleteTarget   = null;
 document.getElementById('headerDate').textContent =
   new Date().toLocaleDateString('ko-KR', {year:'numeric', month:'2-digit', day:'2-digit'});
 
-const q = query(collection(db, COL), orderBy("end1", "desc"));
-onSnapshot(q, snap => {
-  records = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  document.getElementById('dbDot').style.background = '#4ADE80';
-  document.getElementById('dbStatus').textContent   = 'Firestore 연결됨';
-  renderList();
-}, err => {
-  document.getElementById('dbDot').style.background = '#FCA5A5';
-  document.getElementById('dbStatus').textContent   = '연결 오류';
-  console.error(err);
+// ── Auth 상태 감시 ────────────────────────────
+let unsubscribeSnapshot = null;
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    // 로그인 됨 → 앱 화면 표시
+    document.getElementById('loginScreen').classList.remove('show');
+    document.getElementById('navUserEmail').textContent = user.email;
+    // Firestore 연결
+    const q = query(collection(db, COL), orderBy("end1", "desc"));
+    unsubscribeSnapshot = onSnapshot(q, snap => {
+      records = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      document.getElementById('dbDot').style.background = '#4ADE80';
+      document.getElementById('dbStatus').textContent   = 'Firestore 연결됨';
+      renderList();
+    }, err => {
+      document.getElementById('dbDot').style.background = '#FCA5A5';
+      document.getElementById('dbStatus').textContent   = '연결 오류';
+      console.error(err);
+    });
+  } else {
+    // 로그아웃 → 로그인 화면 표시
+    document.getElementById('loginScreen').classList.add('show');
+    document.getElementById('navUserEmail').textContent = '';
+    records = [];
+    if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+  }
 });
+
+// ── 로그인 처리 ───────────────────────────────
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('loginPw').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pw    = document.getElementById('loginPw').value;
+  const errEl = document.getElementById('loginError');
+  const btn   = document.getElementById('loginBtn');
+  if (!email || !pw) { errEl.textContent = '이메일과 비밀번호를 입력하세요'; return; }
+  btn.textContent = '로그인 중...';
+  btn.disabled = true;
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    errEl.textContent = '';
+    document.getElementById('loginPw').value = '';
+  } catch(e) {
+    errEl.textContent = '이메일 또는 비밀번호가 올바르지 않습니다';
+  } finally {
+    btn.textContent = '로그인';
+    btn.disabled = false;
+  }
+}
+
+// ── 로그아웃 처리 ─────────────────────────────
+window.doLogout = async function() {
+  await signOut(auth);
+};
 
 // ── 날짜 정규화 ──────────────────────────────
 function normalizeDate(str) {
@@ -998,6 +1080,25 @@ function renderList() {
                        : '<span class="bid-badge badge-active">ACTIVE</span>';
     const end1s   = (r.end1||'').slice(5, done ? 10 : 16);
     const start2s = (r.start2||'').slice(5, done ? 10 : 16);
+    // 수익성 비율
+    // 개찰 전: 순공사원가 / 추천투찰가
+    // 개찰 후: 예정순공사원가 / 실제 낙찰가
+    let netRatio = null;
+    if (done) {
+      if (r.real_net > 0 && r.actual_result > 0)
+        netRatio = (r.real_net / r.actual_result * 100).toFixed(1) + '%';
+    } else {
+      if (r.net_cost > 0 && r.final_bid > 0)
+        netRatio = (r.net_cost / r.final_bid * 100).toFixed(1) + '%';
+    }
+    const ratioColor = netRatio
+      ? (parseFloat(netRatio) <= 90 ? 'var(--green)'
+       : parseFloat(netRatio) <= 92 ? 'var(--amber)'
+       : 'var(--red)')
+      : '';
+    const ratioBadge = netRatio
+      ? `<span style="font-size:10px; font-family:var(--mono); font-weight:600; color:${ratioColor}; margin-right:6px;">${netRatio}</span>`
+      : '';
     return `
     <div class="bid-card ${sel?'selected':''}" data-notice="${r.notice}">
       <div class="bid-dot ${dotCls}">${dot}</div>
@@ -1009,7 +1110,7 @@ function renderList() {
           <span><span class="bid-date-lbl">시작 </span>${start2s}</span>
         </div>
       </div>
-      <div>${badge}</div>
+      <div style="display:flex; align-items:center;">${ratioBadge}${badge}</div>
     </div>`;
   }).join('');
 
@@ -1037,19 +1138,24 @@ function selectItem(r) {
   document.getElementById('r_net_y').checked = hasNet;
   document.getElementById('r_net_n').checked = !hasNet;
   smf('f_a',      r.a_value);
-  sf('f_adjust',  (r.adjust_rate||100).toFixed(4));
   document.getElementById('f_lower').value = (r.lower_rate||87.745).toFixed(3);
   smf('f_actual', r.actual_result > 0 ? r.actual_result : '');
   sf('f_result_reason', r.result_reason || '');
-  smf('f_real_bid',  r.real_bid  || '');
   window._realBidSet = true;
-  updateBidDiff();
   const reserve = r.reserve_range || '3';
   document.getElementById('r_reserve_2').checked = reserve === '2';
   document.getElementById('r_reserve_3').checked = reserve !== '2';
-  const limitOn = r.limit_applied !== false;
-  document.getElementById('r_limit_on').checked  = limitOn;
-  document.getElementById('r_limit_off').checked = !limitOn;
+  const limitOn = r.limit_applied !== false && hasNet;
+  document.getElementById('r_limit_on').checked   = limitOn;
+  document.getElementById('r_limit_off').checked  = !limitOn;
+  // 순공사원가 유/무에 따라 배제기준 UI 상태 복원
+  document.getElementById('r_limit_on').disabled   = !hasNet;
+  document.getElementById('r_limit_off').disabled  = !hasNet;
+  document.getElementById('limitRadioRow').style.opacity = hasNet ? '1' : '0.35';
+  document.getElementById('limitNoNet').style.display    = hasNet ? 'none' : 'block';
+  // 저장된 사정율 복원 (내가 수정한 값 유지)
+  sf('f_adjust', (r.adjust_rate||100).toFixed(4));
+  // 이력 평균은 참고용으로만 표시 (f_adjust 덮어쓰지 않음)
   analyzeClient(false);
   doCalc();
   // 사후 복기 동기화
@@ -1070,18 +1176,21 @@ window.clearForm = function() {
   selectedNotice = null;
   ['f_client','f_project','f_notice','f_end1','f_start2',
    'f_base','f_net','f_a','f_actual','f_rec','f_result_reason',
-   'f_real_bid',
    'act_base','act_net','act_price'].forEach(id => sf(id,''));
   sf('f_adjust','100.0000');
   document.getElementById('f_lower').value = '87.745';
   document.getElementById('lbl98').textContent = '배제기준(98%): —';
   document.getElementById('analysisResult').textContent = '발주처를 입력하세요';
   document.getElementById('analysisResult').className = 'analysis-value muted';
-  document.getElementById('bidDiffWrap').style.display = 'none';
-  document.getElementById('r_limit_off').checked = true;
-  document.getElementById('r_limit_on').checked  = false;
+  document.getElementById('r_limit_off').checked  = true;
+  document.getElementById('r_limit_on').checked   = false;
   document.getElementById('r_net_n').checked = true;
   document.getElementById('r_net_y').checked = false;
+  // 신규 시 순공사원가 무 → 배제기준 비활성화
+  document.getElementById('r_limit_on').disabled   = true;
+  document.getElementById('r_limit_off').disabled  = true;
+  document.getElementById('limitRadioRow').style.opacity = '0.35';
+  document.getElementById('limitNoNet').style.display    = 'block';
   document.getElementById('r_reserve_3').checked = true;
   document.getElementById('r_reserve_2').checked = false;
   window._realBidSet = false;
@@ -1109,47 +1218,47 @@ function doCalc() {
   const a     = graw('f_a');
   const lower = parseFloat(document.getElementById('f_lower').value) || 87.745;
   const adj   = parseFloat(gstr('f_adjust')) || 100;
-  const limitOn = document.getElementById('r_limit_on')?.checked ?? false;
   const lbl   = document.getElementById('lbl98');
   const rec   = document.getElementById('f_rec');
-  // 순공사원가 무이면 기초금액÷1.1 자동 적용
+  // 순공사원가 유/무
   const netHasVal = document.getElementById('r_net_y')?.checked ?? false;
-  const netEff  = netHasVal ? net : (base > 0 ? Math.ceil(base / 1.1) : 0);
-  // 배제기준 계산식:
-  // 순공사원가 유: 순공사원가(부가세포함) × 98%
-  // 순공사원가 무: ((기초금액÷1.1) - A값) × 98% + A값) × 1.1
-  const limit98 = netHasVal
-    ? netEff * 0.98
-    : (((base / 1.1) - a) * 0.98 + a) * 1.1;
+  const limitOn   = netHasVal && (document.getElementById('r_limit_on')?.checked ?? false);
+  const netEff    = netHasVal ? net : 0;
+
+  // 배제기준 계산 (순공사원가 유일 때만)
+  const limit98   = netHasVal && netEff > 0 ? netEff * (adj/100) * 0.98 : 0;
 
   // 낙찰하한율 기준가
-  const lowerBase = ((base - a) * (lower/100)) + a;
-  const dangerZone = limitOn && netEff > 0 && limit98 > lowerBase;
+  const lowerBase  = ((base - a) * (lower/100)) + a;
+  const dangerZone = limitOn && limit98 > 0 && limit98 > lowerBase;
 
-  if (netEff > 0 && limitOn) {
-    const autoText = !netHasVal ? ' (자동)' : '';
+  // 배제기준 라벨
+  if (!netHasVal) {
+    lbl.textContent   = '배제기준(98%): 순공사원가 미제공';
+    lbl.style.color      = 'var(--fg-muted)';
+    lbl.style.fontWeight = '400';
+  } else if (limitOn) {
     if (dangerZone) {
-      lbl.textContent = `⚠️ 배제기준: ${fmt(limit98)}${autoText} > 낙찰하한율 기준가: ${fmt(lowerBase)} — 배제기준이 실질 하한선!`;
-      lbl.style.color = 'var(--red)';
+      lbl.textContent   = `⚠️ 배제기준: ${fmt(limit98)} > 낙찰하한율 기준가: ${fmt(lowerBase)} — 배제기준이 실질 하한선!`;
+      lbl.style.color      = 'var(--red)';
       lbl.style.fontWeight = '600';
     } else {
-      lbl.textContent = `배제기준(98%): ${fmt(limit98)}${autoText}`;
-      lbl.style.color = 'var(--red)';
+      lbl.textContent   = `배제기준(98%): ${fmt(limit98)}`;
+      lbl.style.color      = 'var(--red)';
       lbl.style.fontWeight = '400';
     }
   } else if (netEff > 0) {
-    lbl.textContent = '배제기준(98%): 미적용';
-    lbl.style.color = 'var(--fg-muted)';
+    lbl.textContent   = '배제기준(98%): 미적용';
+    lbl.style.color      = 'var(--fg-muted)';
     lbl.style.fontWeight = '400';
   } else {
-    lbl.textContent = '배제기준(98%): —';
-    lbl.style.color = 'var(--fg-muted)';
+    lbl.textContent   = '배제기준(98%): —';
+    lbl.style.color      = 'var(--fg-muted)';
     lbl.style.fontWeight = '400';
   }
 
-  updateProfitCard(base, netEff, dangerZone);
-
   if (!base) {
+    updateProfitCard(0, 0);
     rec.value = '';
     document.getElementById('res_rec').textContent   = '—';
     document.getElementById('res_98').textContent    = '—';
@@ -1160,23 +1269,32 @@ function doCalc() {
     return;
   }
 
-  const raw    = ((base - a) * (lower/100) * (adj/100)) + a;
+  const raw    = ((base * (adj/100) - a) * (lower/100)) + a;
   const result = limitOn ? Math.max(raw, limit98) : raw;
   const capped = limitOn && raw < limit98;
+
+  updateProfitCard(base, netEff, dangerZone, result, netHasVal);
 
   rec.style.color = capped ? 'var(--amber)' : 'var(--green)';
   rec.value = capped ? `${fmt(result)}  ⚠ 배제적용` : fmt(result);
 
   // 수익성 차이
-  const diffAmt = result - netEff;
   const diffEl  = document.getElementById('diffAmount');
   const diffMsg = document.getElementById('diffMsg');
-  diffEl.textContent = (diffAmt >= 0 ? '+' : '') + fmt(diffAmt) + ' 원';
-  diffEl.style.color = diffAmt >= 0 ? 'var(--green)' : 'var(--red)';
-  if (diffAmt >= 0) {
-    diffMsg.innerHTML = `<span style="color:var(--green)">순원가 보전 +${fmt(diffAmt)}원 여유</span>`;
+  if (!netHasVal) {
+    // 순공사원가 미제공 — 가용액 표시 불가
+    diffEl.textContent = '—';
+    diffEl.style.color = 'var(--fg-muted)';
+    diffMsg.innerHTML  = `<span style="color:var(--red)">일반관리비·이윤 확보 불가 — 경영 판단 사항</span>`;
   } else {
-    diffMsg.innerHTML = `<span style="color:var(--red)">순원가 대비 ${fmt(Math.abs(diffAmt))}원 부족</span>`;
+    const diffAmt = result - netEff;
+    diffEl.textContent = (diffAmt >= 0 ? '+' : '') + fmt(diffAmt) + ' 원';
+    diffEl.style.color = diffAmt >= 0 ? 'var(--green)' : 'var(--red)';
+    if (diffAmt >= 0) {
+      diffMsg.innerHTML = `<span style="color:var(--green)">순공사원가 보전 후 +${fmt(diffAmt)}원 여유</span>`;
+    } else {
+      diffMsg.innerHTML = `<span style="color:var(--red)">순공사원가 대비 ${fmt(Math.abs(diffAmt))}원 부족</span>`;
+    }
   }
 
   // 시뮬레이션
@@ -1185,32 +1303,48 @@ function doCalc() {
   document.getElementById('res_final').textContent = fmt(result) + ' 원';
   document.getElementById('res_status').textContent= capped ? '△ 배제기준(98%) 적용' : '낙찰하한율 기준';
 
-  // 실제 투찰금액 최초 1회 자동입력
-  const realBidEl = document.getElementById('f_real_bid');
-  if (realBidEl && !window._realBidSet && !realBidEl.value) {
-    realBidEl.value = fmt(result);
-    window._realBidSet = true;
-  }
-  updateBidDiff();
+
 }
 
 // ── 수익성 카드 ───────────────────────────────
-function updateProfitCard(base, net, dangerZone=false) {
-  const card = document.getElementById('profitCard');
-  const zone = document.getElementById('profitZone');
-  const rate = document.getElementById('profitRate');
-  const sub  = document.getElementById('profitSub');
+function updateProfitCard(base, net, dangerZone=false, recAmt=0, netHasVal=true) {
+  const card    = document.getElementById('profitCard');
+  const zone    = document.getElementById('profitZone');
+  const rate    = document.getElementById('profitRate');
+  const sub     = document.getElementById('profitSub');
+  const diffLbl = document.getElementById('diff-label-txt');
 
-  if (!base || !net) {
+  const formulaEl = document.getElementById('profitFormula');
+  if (!base) {
     card.className    = 'profit-card idle';
     zone.textContent  = '분석 대기 중';
     rate.textContent  = '—';
-    sub.innerHTML     = '90.0% 이하 안정권<br>90.0~92.0% 주의 구간<br>92.0% 초과 위험 구간';
+    sub.innerHTML     = '90.0% 이하 안정 구간<br>90.0~92.0% 주의 구간<br>92.0% 초과 경계 구간';
+    if (diffLbl) diffLbl.textContent = '일반관리비 및 이윤 가용액';
+    if (formulaEl) formulaEl.textContent = '순공사원가 ÷ 추천투찰가 × 100';
     return;
   }
 
-  const ratio = (net / base) * 100;
+  // ── 순공사원가 미제공 공고 ──
+  if (!netHasVal) {
+    card.className   = 'profit-card idle';
+    zone.textContent = '순공사원가 미제공';
+    rate.textContent = '—';
+    sub.textContent  = '수익성 분석 불가';
+    if (diffLbl) diffLbl.textContent = '일반관리비 및 이윤 가용액';
+    if (formulaEl) formulaEl.textContent = '';
+    document.getElementById('diffAmount').textContent = '—';
+    document.getElementById('diffAmount').style.color = 'var(--fg-muted)';
+    document.getElementById('diffMsg').textContent    = '';
+    return;
+  }
+
+  // ── 순공사원가 명시 공고 ──
+  const denom = recAmt > 0 ? recAmt : base;
+  const ratio = (net / denom) * 100;
   rate.textContent = ratio.toFixed(2) + '%';
+  if (diffLbl) diffLbl.textContent = '일반관리비 및 이윤 가용액';
+  if (formulaEl) formulaEl.textContent = '순공사원가 ÷ 추천투찰가 × 100';
 
   // 배제기준이 낙찰하한율보다 높은 경우 최우선 경고
   if (dangerZone) {
@@ -1222,16 +1356,16 @@ function updateProfitCard(base, net, dangerZone=false) {
 
   if (ratio <= 90) {
     card.className   = 'profit-card safe';
-    zone.textContent = '✅ 90.0% 이하 안정권';
-    sub.textContent  = `순공사원가 비율 ${ratio.toFixed(2)}% — 배제기준 여유 있음`;
+    zone.textContent = '✅ 안정 구간';
+    sub.textContent  = `순공사원가 비율 ${ratio.toFixed(2)}% — 일반관리비·이윤 여유 충분`;
   } else if (ratio <= 92) {
     card.className   = 'profit-card warning';
-    zone.textContent = '⚠️ 90.0~92.0% 주의 구간';
-    sub.textContent  = `순공사원가 비율 ${ratio.toFixed(2)}% — 배제기준 근접, 신중한 투찰 필요`;
+    zone.textContent = '⚠️ 주의 구간';
+    sub.textContent  = `순공사원가 비율 ${ratio.toFixed(2)}% — 일반관리비·이윤 여유 부족, 신중한 투찰 필요`;
   } else {
     card.className   = 'profit-card danger';
-    zone.textContent = '🚨 92.0% 초과 위험 구간';
-    sub.textContent  = `순공사원가 비율 ${ratio.toFixed(2)}% — 손실 위험, 입찰 재고 권장`;
+    zone.textContent = '🚨 경계 구간';
+    sub.textContent  = `순공사원가 비율 ${ratio.toFixed(2)}% — 일반관리비·이윤 확보 어려움, 입찰 재고 권장`;
   }
 }
 
@@ -1248,8 +1382,8 @@ window.runActCalc = function() {
   const rec     = graw('f_rec') || (() => {
     if (!base) return 0;
     const limitOn = document.getElementById('r_limit_on')?.checked ?? false;
-    const raw = ((base - a) * (lower/100) * (adj/100)) + a;
-    return limitOn ? Math.max(raw, net * 0.98) : raw;
+    const raw = ((base * (adj/100) - a) * (lower/100)) + a;
+    return limitOn ? Math.max(raw, net * (adj/100) * 0.98) : raw;
   })();
 
   // 요약 테이블 업데이트
@@ -1269,20 +1403,7 @@ window.runActCalc = function() {
     document.getElementById('sum_adjust_rate').textContent = '—';
   }
 
-  // 역산 사정률 (element가 있을 때만)
-  const invRateEl = document.getElementById('sum_inv_rate');
-  if (invRateEl) {
-    const useBase = actBase || base;
-    if (useBase > 0 && a > 0 && actPrice > 0) {
-      const denom = useBase - a;
-      if (denom > 0) {
-        const invRate = ((actPrice - a) / denom) / (lower / 100) * 100;
-        invRateEl.textContent = invRate.toFixed(4) + '%';
-      }
-    } else {
-      invRateEl.textContent = '—';
-    }
-  }
+  // 역산 사정률 — 삭제됨
 
   // 98% 배지
   const badge = document.getElementById('act_net98_badge');
@@ -1321,13 +1442,17 @@ function analyzeClient(fillAdj = true) {
     return;
   }
   const curReserve = document.querySelector('input[name="r_reserve"]:checked')?.value || '3';
-  const completed  = records.filter(r => r.client === client && r.is_completed
-    && r.result_reason !== '순공사원가 98%미만'
-    && r.result_reason !== '낙찰(배제기준 적용)');
-  const useRecs = curReserve === '2'
+  // 목록용: is_completed 전체 (순공사원가 98%미만 포함)
+  // 평균용: 순공사원가 98%미만 + 배제기준 적용 낙찰 제외
+  const completed  = records.filter(r => r.client === client && r.is_completed);
+  const forAvg     = completed.filter(r => r.result_reason !== '순공사원가 98%미만');
+  const useRecs    = curReserve === '2'
     ? completed.filter(r => (r.reserve_range||'3') === '2')
     : completed;
-  const rates = useRecs.map(r => calcEffAdj(r)).filter(v => v !== null);
+  const useRecsAvg = curReserve === '2'
+    ? forAvg.filter(r => (r.reserve_range||'3') === '2')
+    : forAvg;
+  const rates = useRecsAvg.map(r => calcEffAdj(r)).filter(v => v !== null);
 
   if (!rates.length) {
     el.textContent = `[${client}]  분석 데이터 없음 → 기본값 100% 적용`;
@@ -1347,7 +1472,7 @@ function analyzeClient(fillAdj = true) {
   if (fillAdj) { sf('f_adjust', res.adj.toFixed(4)); doCalc(); }
 }
 
-// ── 사정율 계산 ──────────────────────────────
+// ── 역산 사정률 계산 ──────────────────────────
 function calcEffAdj(r) {
   if (!r.is_completed) return null;
   // real_base(실제 예정가격)가 있으면 정확한 공식 사용
@@ -1363,10 +1488,10 @@ function calcEffAdj(r) {
   catch { return null; }
 }
 
-// ── 회귀 보정 사정율 계산 ────────────────────
+// ── 회귀 보정 사정률 계산 ────────────────────
 function calcRegressAdj(rates) {
   const n = rates.length;
-  if (n === 0) return { adj: 100, avg: 100, correction: 0, n: 0, confidence: 0, label: '기준값' };
+  if (n === 0) return { adj: 100, avg: 100, correction: 0, n: 0, confidence: 1, label: '기준값' };
   const avg = rates.reduce((a,b)=>a+b,0) / n;
   const recentN = Math.min(3, n);
   const recent  = rates.slice(-recentN);
@@ -1392,13 +1517,12 @@ window.saveRecord = async function() {
   const a      = graw('f_a');
   const lower  = parseFloat(document.getElementById('f_lower').value) || 87.745;
   const adj    = parseFloat(gstr('f_adjust')) || 100;
-  // 실제 낙찰가: act_price(사후복기 입력) 우선, 없으면 f_actual(구 필드) 사용
-  const actual = graw('act_price') || graw('f_actual');
+  const actual = graw('f_actual') || graw('act_price');
   const limitOn= document.getElementById('r_limit_on')?.checked ?? false;
   const limit98 = net > 0
-    ? net * 0.98
-    : (((base / 1.1) - a) * 0.98 + a) * 1.1;
-  const raw    = ((base - a) * (lower/100) * (adj/100)) + a;
+    ? net * (adj/100) * 0.98
+    : (((base * (adj/100) / 1.1) - a) * 0.98 + a) * 1.1;
+  const raw    = ((base * (adj/100) - a) * (lower/100)) + a;
   const final  = limitOn ? Math.max(raw, limit98) : raw;
   const ar     = (base && actual) ? actual/base*100 : 0;
   const existing = records.find(r => r.notice === notice);
@@ -1651,8 +1775,8 @@ window.openProcessModal = function() {
   const netEffP = (document.getElementById('r_net_y')?.checked && netVal > 0)
     ? netVal : (base > 0 ? Math.ceil(base / 1.1) : 0);
   const limit98P = (document.getElementById('r_net_y')?.checked && netVal > 0)
-    ? netEffP * 0.98
-    : (((base / 1.1) - a) * 0.98 + a) * 1.1;
+    ? netEffP * (adj/100) * 0.98
+    : (((base * (adj/100) / 1.1) - a) * 0.98 + a) * 1.1;
   const isCapped = step4 < limit98P && base > 0 && document.getElementById('r_limit_on')?.checked;
   const finalAmt = isCapped ? limit98P : step4;
 
@@ -1734,13 +1858,17 @@ window.showHistory = function() {
   const client = gstr('f_client');
   if (!client) { toast('발주처를 먼저 입력하세요', 'error'); return; }
   const curReserve = document.querySelector('input[name="r_reserve"]:checked')?.value || '3';
-  const completed  = records.filter(r => r.client === client && r.is_completed
-    && r.result_reason !== '순공사원가 98%미만'
-    && r.result_reason !== '낙찰(배제기준 적용)');
-  const useRecs = curReserve === '2'
+  // 목록용: is_completed 전체 (순공사원가 98%미만 포함)
+  // 평균용: 순공사원가 98%미만 + 배제기준 적용 낙찰 제외
+  const completed  = records.filter(r => r.client === client && r.is_completed);
+  const forAvg     = completed.filter(r => r.result_reason !== '순공사원가 98%미만');
+  const useRecs    = curReserve === '2'
     ? completed.filter(r => (r.reserve_range||'3') === '2')
     : completed;
-  const rates = useRecs.map(r => calcEffAdj(r)).filter(v => v !== null);
+  const useRecsAvg = curReserve === '2'
+    ? forAvg.filter(r => (r.reserve_range||'3') === '2')
+    : forAvg;
+  const rates = useRecsAvg.map(r => calcEffAdj(r)).filter(v => v !== null);
   const avg   = rates.length ? rates.reduce((a,b)=>a+b,0)/rates.length : null;
   let stddev  = null;
   if (rates.length >= 2) {
@@ -1764,14 +1892,21 @@ window.showHistory = function() {
     document.getElementById('historyAvg').textContent = '';
   }
 
-  const rows = useRecs.map(r => ({ r, eff: calcEffAdj(r) })).filter(x => x.eff !== null);
+  // 목록: 사정율 null이어도 표시, 평균은 null 제외(기존 유지)
+  const rows = useRecs.map(r => ({ r, eff: calcEffAdj(r) }));
   document.getElementById('historyBody').innerHTML = rows.length
     ? rows.map(({r, eff}) => `
         <tr>
           <td>${(r.start2||'').slice(0,10)}</td>
           <td>${r.project||''}</td>
           <td style="text-align:center; color:var(--blue);">±${r.reserve_range||'3'}%</td>
-          <td class="td-rate">${eff.toFixed(4)}% ${r.real_base ? '<span style="font-size:9px;color:var(--blue);">실측</span>' : ''}</td>
+          <td class="td-rate">${
+            r.result_reason === '순공사원가 98%미만'
+              ? '<span style="font-size:11px;color:var(--red);">순공사원가 98%미만 배제</span>'
+              : eff !== null
+                ? `${eff.toFixed(4)}% ${r.real_base ? '<span style="font-size:9px;color:var(--blue);">실측</span>' : ''}`
+                : '<span style="font-size:11px;color:var(--fg-muted);">순공사원가 미제공(98%미만배제)</span>'
+          }</td>
         </tr>`).join('')
     : `<tr><td colspan="4" style="text-align:center; color:var(--fg-muted); padding:20px;">데이터 없음</td></tr>`;
 
@@ -1809,10 +1944,21 @@ window.onNetInput = function() {
 window.onNetRadio = function() {
   const isY = document.getElementById('r_net_y').checked;
   if (!isY) {
-    // 무 선택 시 입력값 초기화
     document.getElementById('f_net').value = '';
+    // 순공사원가 무 → 배제기준 비활성화
+    document.getElementById('r_limit_on').checked  = false;
+    document.getElementById('r_limit_off').checked = true;
+    document.getElementById('r_limit_on').disabled  = true;
+    document.getElementById('r_limit_off').disabled = true;
+    document.getElementById('limitRadioRow').style.opacity = '0.35';
+    document.getElementById('limitNoNet').style.display = 'block';
   } else {
     document.getElementById('f_net').focus();
+    // 순공사원가 유 → 배제기준 활성화
+    document.getElementById('r_limit_on').disabled  = false;
+    document.getElementById('r_limit_off').disabled = false;
+    document.getElementById('limitRadioRow').style.opacity = '1';
+    document.getElementById('limitNoNet').style.display = 'none';
   }
   debounceCalc();
 };
@@ -1823,6 +1969,13 @@ window.toggleLowerList = function() {
   if (!list) return;
   list.style.display = list.style.display === 'none' ? 'block' : 'none';
 };
+window.focusLowerInput = function() {
+  const list = document.getElementById('lowerList');
+  const el   = document.getElementById('f_lower');
+  if (list) list.style.display = 'none';
+  if (el) { el.value = ''; el.focus(); }
+};
+
 window.pickLower = function(val) {
   const inp  = document.getElementById('f_lower');
   const list = document.getElementById('lowerList');
