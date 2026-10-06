@@ -1251,16 +1251,19 @@ window.runActCalc = function() {
     document.getElementById('sum_adjust_rate').textContent = '—';
   }
 
-  // 역산 사정률
-  const useBase = actBase || base;
-  if (useBase > 0 && a > 0 && actPrice > 0) {
-    const denom = useBase - a;
-    if (denom > 0) {
-      const invRate = ((actPrice - a) / denom) / (lower / 100) * 100;
-      document.getElementById('sum_inv_rate').textContent = invRate.toFixed(4) + '%';
+  // 역산 사정률 (element가 있을 때만 처리)
+  const invRateEl = document.getElementById('sum_inv_rate');
+  if (invRateEl) {
+    const useBase = actBase || base;
+    if (useBase > 0 && a > 0 && actPrice > 0) {
+      const denom = useBase - a;
+      if (denom > 0) {
+        const invRate = ((actPrice - a) / denom) / (lower / 100) * 100;
+        invRateEl.textContent = invRate.toFixed(4) + '%';
+      }
+    } else {
+      invRateEl.textContent = '—';
     }
-  } else {
-    document.getElementById('sum_inv_rate').textContent = '—';
   }
 
   // 98% 배지
@@ -1317,18 +1320,16 @@ function analyzeClient(fillAdj = true) {
   const res = calcRegressAdj(rates);
   const confIcon = res.confidence === 3 ? '●●●' : res.confidence === 2 ? '●●○' : '●○○';
   const corrSign = res.correction >= 0 ? '+' : '';
-  const corrText = res.n >= 5
-    ? `  보정 ${corrSign}${res.correction.toFixed(4)}%`
-    : '';
+  const corrText = res.n >= 5 ? `  보정 ${corrSign}${res.correction.toFixed(4)}%` : '';
   el.innerHTML = `추천 사정률 &nbsp;<strong>${res.adj.toFixed(4)}%</strong>&nbsp; `
     + `<span style="font-size:11px;color:var(--fg-muted);">`
     + `평균 ${res.avg.toFixed(4)}%${corrText} &nbsp;|&nbsp; ${rates.length}건 ±${curReserve}% &nbsp;|&nbsp; 신뢰도 ${confIcon}(${res.label})`
     + `</span>`;
-  el.className   = 'analysis-value';
+  el.className = 'analysis-value';
   if (fillAdj) { sf('f_adjust', res.adj.toFixed(4)); doCalc(); }
 }
 
-// ── 역산 사정률 계산 ──────────────────────────
+// ── 사정율 역산 ───────────────────────────────
 function calcEffAdj(r) {
   const realBase = r.real_base || 0;
   const base     = r.base     || 0;
@@ -1336,38 +1337,26 @@ function calcEffAdj(r) {
   return (realBase / base) * 100;
 }
 
-// ── 회귀 보정 사정율 계산 ──────────────────────
+// ── 회귀 보정 사정율 계산 ────────────────────
 // rates: 시간순(오래된→최신) 사정율 배열
-// 신뢰도: 건수에 따라 보정 강도 조절
 function calcRegressAdj(rates) {
   const n = rates.length;
-  if (n === 0) return { adj: 100, label: '기준값', confidence: 0 };
-
+  if (n === 0) return { adj: 100, avg: 100, correction: 0, n: 0, confidence: 0, label: '기준값' };
   const avg = rates.reduce((a,b)=>a+b,0) / n;
-
-  // 최근 편차 합산 (최근 3건, 없으면 전체)
+  // 최근 3건 편차 합산
   const recentN = Math.min(3, n);
   const recent  = rates.slice(-recentN);
   const recentDeviationSum = recent.reduce((s,v) => s + (v - 100), 0);
-
   // 신뢰도 가중치: 건수에 따라 0~1
-  // 0~4건: 낮음(0.2), 5~9건: 중간(0.5), 10건+: 높음(1.0)
   const weight = n >= 10 ? 1.0 : n >= 5 ? 0.5 : 0.2;
-
-  // 회귀 보정: 최근에 낮았으면 → 이번엔 높게, 반대도 마찬가지
-  // 감쇠계수 0.25 (너무 과하게 튀지 않도록)
-  const correction = -recentDeviationSum * 0.25 * weight;
-
-  // 최종 추천 = 평균 + 보정 (±1.5% 이내로 클램프)
-  const clamped = Math.max(-1.5, Math.min(1.5, correction));
-  const recommended = avg + clamped;
-
+  // 회귀 보정: 최근이 낮으면 → 높게, 높으면 → 낮게 / 감쇠계수 0.25
+  const correction = Math.max(-1.5, Math.min(1.5, -recentDeviationSum * 0.25 * weight));
+  const adj = avg + correction;
   let confidence, label;
   if (n >= 10) { confidence = 3; label = '높음'; }
   else if (n >= 5) { confidence = 2; label = '중간'; }
   else { confidence = 1; label = '낮음'; }
-
-  return { adj: recommended, avg, correction: clamped, recentDeviationSum, n, confidence, label };
+  return { adj, avg, correction, recentDeviationSum, n, confidence, label };
 }
 
 // ── 저장 ─────────────────────────────────────
@@ -1738,15 +1727,11 @@ window.showHistory = function() {
   const stdText = stddev !== null ? `  σ ${stddev.toFixed(4)}%` : rates.length < 2 ? '  (데이터 부족)' : '';
 
   document.getElementById('historyTitle').textContent = `${client}  낙찰 이력 (±${curReserve}%)`;
-
-  // 회귀 보정 추천 사정율 표시
   if (rates.length > 0) {
     const res = calcRegressAdj(rates);
     const confIcon = res.confidence === 3 ? '●●●' : res.confidence === 2 ? '●●○' : '●○○';
     const corrSign = res.correction >= 0 ? '+' : '';
-    const corrText = res.n >= 5
-      ? ` / 보정 ${corrSign}${res.correction.toFixed(4)}%`
-      : ' / 데이터 부족 — 보정 미적용';
+    const corrText = res.n >= 5 ? ` / 보정 ${corrSign}${res.correction.toFixed(4)}%` : ' / 데이터 부족 — 보정 미적용';
     document.getElementById('historyAvg').innerHTML =
       `평균 ${avg.toFixed(4)}%${stdText}  (${rates.length}건)` +
       `<br><span style="font-size:12px;color:var(--blue);">` +
