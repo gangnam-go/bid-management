@@ -1801,32 +1801,40 @@ window.onNetRadio = function() {
 // ── 낙찰하한율 드롭다운 ──────────────────────
 window.toggleLowerList = function() {
   const list = document.getElementById('lowerList');
+  if (!list) return;
   list.style.display = list.style.display === 'none' ? 'block' : 'none';
 };
 window.pickLower = function(val) {
-  document.getElementById('f_lower').value = val;
-  document.getElementById('lowerList').style.display = 'none';
+  const inp  = document.getElementById('f_lower');
+  const list = document.getElementById('lowerList');
+  if (inp)  inp.value = val;
+  if (list) list.style.display = 'none';
   doCalc();
 };
 
 // ── 탈락사유 드롭다운 ────────────────────────
 window.toggleReasonList = function() {
   const list = document.getElementById('reasonList');
+  if (!list) return;
   list.style.display = list.style.display === 'none' ? 'block' : 'none';
 };
 window.pickReason = function(val) {
-  document.getElementById('f_result_reason').value = val;
-  document.getElementById('reasonList').style.display = 'none';
+  const inp  = document.getElementById('f_result_reason');
+  const list = document.getElementById('reasonList');
+  if (inp)  inp.value = val;
+  if (list) list.style.display = 'none';
 };
 
 // 외부 클릭 시 드롭다운 닫기
-document.addEventListener('click', e => {
-  const lowerList  = document.getElementById('lowerList');
-  const reasonList = document.getElementById('reasonList');
-  if (lowerList && !e.target.closest('#f_lower') && !e.target.closest('#lowerList') && !e.target.closest('button[onclick="toggleLowerList()"]'))
-    lowerList.style.display = 'none';
-  if (reasonList && !e.target.closest('#f_result_reason') && !e.target.closest('#reasonList') && !e.target.closest('button[onclick="toggleReasonList()"]'))
-    reasonList.style.display = 'none';
+document.addEventListener('click', function(e) {
+  try {
+    const lowerList  = document.getElementById('lowerList');
+    const reasonList = document.getElementById('reasonList');
+    if (lowerList && !e.target.closest('#f_lower') && !e.target.closest('#lowerList') && !e.target.closest('button[onclick="toggleLowerList()"]'))
+      lowerList.style.display = 'none';
+    if (reasonList && !e.target.closest('#f_result_reason') && !e.target.closest('#reasonList') && !e.target.closest('button[onclick="toggleReasonList()"]'))
+      reasonList.style.display = 'none';
+  } catch(err) { /* 무시 */ }
 });
 
 // ── 모달 ─────────────────────────────────────
