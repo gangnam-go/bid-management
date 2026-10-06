@@ -645,8 +645,8 @@ body {
             </table>
           </div>
 
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div class="input-group full">
+          <div style="display:flex; gap:10px; align-items:flex-start;">
+            <div class="input-group" style="flex:1; margin:0;">
               <label>실제 낙찰가 (1순위)</label>
               <div style="display:flex; gap:10px; align-items:center;">
                 <input id="act_price" style="flex:1;" placeholder="실제 낙찰 금액" oninput="fmtMoney(this);runActCalc()">
@@ -654,7 +654,7 @@ body {
               </div>
               <div class="act-msg" id="act_analysis_msg"></div>
             </div>
-            <div class="input-group full">
+            <div class="input-group" style="flex:1; margin:0;">
               <label>결과/탈락사유</label>
               <div style="position:relative; display:flex; align-items:center;">
                 <input id="f_result_reason" placeholder="선택 또는 직접입력" autocomplete="off" style="width:100%; padding-right:28px;">
