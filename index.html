@@ -1329,12 +1329,20 @@ function analyzeClient(fillAdj = true) {
   if (fillAdj) { sf('f_adjust', res.adj.toFixed(4)); doCalc(); }
 }
 
-// ── 사정율 계산 (real_base / base × 100) ─────
+// ── 사정율 계산 ──────────────────────────────
 function calcEffAdj(r) {
-  const realBase = r.real_base || 0;
-  const base     = r.base     || 0;
-  if (!r.is_completed || !realBase || !base) return null;
-  return (realBase / base) * 100;
+  if (!r.is_completed) return null;
+  // real_base(실제 예정가격)가 있으면 정확한 공식 사용
+  if (r.real_base && r.base) return (r.real_base / r.base) * 100;
+  // 없으면 기존 역산 방식 fallback
+  const base  = r.base || 0;
+  const a     = r.a_value || 0;
+  const lower = r.lower_rate || 87.745;
+  const actual= r.actual_result || 0;
+  const denom = base - a;
+  if (denom <= 0 || !actual) return null;
+  try { return ((actual - a) / denom) / (lower / 100) * 100; }
+  catch { return null; }
 }
 
 // ── 회귀 보정 사정율 계산 ────────────────────
