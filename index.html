@@ -1392,7 +1392,8 @@ window.saveRecord = async function() {
   const a      = graw('f_a');
   const lower  = parseFloat(document.getElementById('f_lower').value) || 87.745;
   const adj    = parseFloat(gstr('f_adjust')) || 100;
-  const actual = graw('f_actual');
+  // 실제 낙찰가: act_price(사후복기 입력) 우선, 없으면 f_actual(구 필드) 사용
+  const actual = graw('act_price') || graw('f_actual');
   const limitOn= document.getElementById('r_limit_on')?.checked ?? false;
   const limit98 = net > 0
     ? net * 0.98
