@@ -1940,6 +1940,13 @@ window.onNetInput = function() {
   const hasVal = val !== '' && val !== '0';
   document.getElementById('r_net_y').checked = hasVal;
   document.getElementById('r_net_n').checked = !hasVal;
+  // 라디오 활성/비활성 + 배제기준 자동 적용(입력 시) / 미적용(비움)
+  document.getElementById('r_limit_on').disabled  = !hasVal;
+  document.getElementById('r_limit_off').disabled = !hasVal;
+  document.getElementById('r_limit_on').checked   = hasVal;
+  document.getElementById('r_limit_off').checked  = !hasVal;
+  document.getElementById('limitRadioRow').style.opacity = hasVal ? '1' : '0.35';
+  document.getElementById('limitNoNet').style.display    = hasVal ? 'none' : 'block';
 };
 window.onNetRadio = function() {
   const isY = document.getElementById('r_net_y').checked;
