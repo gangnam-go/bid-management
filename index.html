@@ -775,6 +775,26 @@ body {
         <button class="filter-btn" id="fBtn3" onclick="setFilter(3)">개찰완료</button>
         <span class="count-badge" id="countBadge">총 0건</span>
       </div>
+      <div class="list-toolbar" style="flex-wrap:wrap;">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--fg-muted);">기초금액</span>
+        <select id="baseRange" class="search-box" style="font-family:var(--mono);font-size:12px;color:var(--fg);flex:none;" onchange="onBaseRange()">
+          <option value="">전체 금액대</option>
+          <option value="0-3">3억 미만</option>
+          <option value="3-5">3억 ~ 5억</option>
+          <option value="5-10">5억 ~ 10억</option>
+          <option value="10-20">10억 ~ 20억</option>
+          <option value="20-30">20억 ~ 30억</option>
+          <option value="30-50">30억 ~ 50억</option>
+          <option value="50-">50억 이상</option>
+          <option value="custom">직접입력</option>
+        </select>
+        <span id="baseCustom" style="display:none;align-items:center;gap:6px;">
+          <span class="search-box" style="flex:none;width:90px;"><input class="search-input" id="baseMin" type="number" step="0.1" min="0" placeholder="최소" oninput="renderList()"></span>
+          <span style="font-size:11px;color:var(--fg-muted);">~</span>
+          <span class="search-box" style="flex:none;width:90px;"><input class="search-input" id="baseMax" type="number" step="0.1" min="0" placeholder="최대" oninput="renderList()"></span>
+          <span style="font-size:11px;color:var(--fg-muted);">억원</span>
+        </span>
+      </div>
       <div class="list-wrap" id="listWrap">
         <div class="loading"><div class="spinner"></div> 불러오는 중...</div>
       </div>
@@ -1058,6 +1078,26 @@ function renderList() {
     (r.notice||'').toLowerCase().includes(kw) ||
     (r.client||'').toLowerCase().includes(kw)
   );
+
+  // 기초금액 금액대 필터 (단위: 억원)
+  const rng = document.getElementById('baseRange')?.value || '';
+  if (rng) {
+    let lo = 0, hi = Infinity;
+    if (rng === 'custom') {
+      const mn = parseFloat(document.getElementById('baseMin')?.value);
+      const mx = parseFloat(document.getElementById('baseMax')?.value);
+      if (!isNaN(mn)) lo = mn;
+      if (!isNaN(mx)) hi = mx;
+    } else {
+      const [a, b] = rng.split('-');
+      lo = parseFloat(a) || 0;
+      hi = b === '' ? Infinity : parseFloat(b);
+    }
+    disp = disp.filter(r => {
+      const eok = (Number(r.base) || 0) / 1e8;
+      return eok >= lo && eok < hi;
+    });
+  }
 
   const countEl = document.getElementById('countBadge');
   if (countEl) countEl.textContent = `총 ${disp.length}건`;
@@ -1590,6 +1630,11 @@ window.confirmDelete = async function() {
 
 // ── 필터 ─────────────────────────────────────
 const filterActiveClass = ['', 'active-blue', 'active-teal', 'active-gray'];
+window.onBaseRange = function() {
+  const isCustom = document.getElementById('baseRange').value === 'custom';
+  document.getElementById('baseCustom').style.display = isCustom ? 'inline-flex' : 'none';
+  renderList();
+};
 window.setFilter = function(mode) {
   filterMode = mode;
   for (let i = 0; i <= 3; i++) {
@@ -1940,13 +1985,6 @@ window.onNetInput = function() {
   const hasVal = val !== '' && val !== '0';
   document.getElementById('r_net_y').checked = hasVal;
   document.getElementById('r_net_n').checked = !hasVal;
-  // 라디오 활성/비활성 + 배제기준 자동 적용(입력 시) / 미적용(비움)
-  document.getElementById('r_limit_on').disabled  = !hasVal;
-  document.getElementById('r_limit_off').disabled = !hasVal;
-  document.getElementById('r_limit_on').checked   = hasVal;
-  document.getElementById('r_limit_off').checked  = !hasVal;
-  document.getElementById('limitRadioRow').style.opacity = hasVal ? '1' : '0.35';
-  document.getElementById('limitNoNet').style.display    = hasVal ? 'none' : 'block';
 };
 window.onNetRadio = function() {
   const isY = document.getElementById('r_net_y').checked;
